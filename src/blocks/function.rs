@@ -96,6 +96,7 @@ impl<const IN: usize, const OUT: usize, F> AlgebraicBlock for Function<IN, OUT, 
 }
 
 /// Time-dependent function block: outputs = f(t, inputs)
+#[allow(dead_code)]
 #[derive(Clone)]
 pub struct TimeFunction<const IN: usize, const OUT: usize, F>
 where
@@ -106,6 +107,7 @@ where
     func: F,
 }
 
+#[allow(dead_code)]
 impl<const IN: usize, const OUT: usize, F> TimeFunction<IN, OUT, F>
 where
     F: Fn(f64, &[f64; IN], &mut [f64; OUT]),

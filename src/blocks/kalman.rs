@@ -1,4 +1,8 @@
 //! Discrete-time Kalman filter for state estimation
+//!
+//! Uses standard linear algebra notation (uppercase for matrices: F, H, Q, R, P, B, K, S)
+
+#![allow(non_snake_case)]
 
 use crate::block::{Block, DynamicBlock, StepResult};
 use nalgebra::{DMatrix, DVector};
@@ -154,6 +158,7 @@ impl KalmanFilter {
     /// * `x0` - Optional initial state estimate (defaults to zeros)
     /// * `P0` - Optional initial error covariance (defaults to identity)
     /// * `dt` - Optional discrete time step
+    #[allow(clippy::too_many_arguments)]
     pub fn with_options(
         F: DMatrix<f64>,
         H: DMatrix<f64>,
@@ -331,7 +336,7 @@ impl Block for KalmanFilter {
         }
     }
 
-    fn step(&mut self, _t: f64, dt: f64) -> StepResult {
+    fn step(&mut self, _t: f64, _dt: f64) -> StepResult {
         // If dt is None, updates are triggered manually via update_filter()
         // Otherwise, update is triggered automatically in step()
         if self.dt.is_some() {

@@ -107,7 +107,7 @@ impl RKDP54 {
 
         // Compute timestep scale factor using accuracy order
         // Use minimum of propagating order (5) and embedded order (4)
-        let order = 4.min(5);
+        let order = 4;
         let mut timestep_scale = self.beta / error_norm.powf(1.0 / (order as f64 + 1.0));
 
         // Clip rescale factor to reasonable range [0.1, 10.0]

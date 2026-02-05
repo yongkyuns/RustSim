@@ -130,7 +130,7 @@ impl Solver for ESDIRK4 {
 }
 
 impl ImplicitSolver for ESDIRK4 {
-    fn step<F>(&mut self, mut f: F, dt: f64) -> SolverStepResult
+    fn step<F>(&mut self, _f: F, _dt: f64) -> SolverStepResult
     where
         F: FnMut(&DVector<f64>, f64) -> DVector<f64>,
     {
@@ -138,7 +138,7 @@ impl ImplicitSolver for ESDIRK4 {
         SolverStepResult::default()
     }
 
-    fn solve<F, J>(&mut self, mut f: F, mut jac: Option<J>, dt: f64) -> Result<f64, SolverError>
+    fn solve<F, J>(&mut self, mut f: F, _jac: Option<J>, dt: f64) -> Result<f64, SolverError>
     where
         F: FnMut(&DVector<f64>, f64) -> DVector<f64>,
         J: FnMut(&DVector<f64>, f64) -> nalgebra::DMatrix<f64>,

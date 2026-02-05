@@ -25,6 +25,7 @@ pub struct LUT1D {
     outputs: Vec<f64>,
     points: Vec<f64>,
     values: Vec<Vec<f64>>, // values[output_idx][point_idx]
+    #[allow(dead_code)]
     num_outputs: usize,
 }
 
@@ -34,8 +35,8 @@ impl LUT1D {
     /// # Arguments
     ///
     /// * `points` - Sorted array of x values (must be monotonically increasing)
-    /// * `values` - Either a 1D array (single output) or 2D array (multiple outputs)
-    ///              For multiple outputs, shape is (num_points, num_outputs)
+    /// * `values` - Either a 1D array (single output) or 2D array (multiple outputs).
+    ///   For multiple outputs, shape is (num_points, num_outputs)
     ///
     /// # Panics
     ///
@@ -64,8 +65,8 @@ impl LUT1D {
     /// # Arguments
     ///
     /// * `points` - Sorted array of x values (must be monotonically increasing)
-    /// * `values` - 2D array where values[i] is the output vector at points[i]
-    ///              Shape: (num_points, num_outputs)
+    /// * `values` - 2D array where values[i] is the output vector at points[i].
+    ///   Shape: (num_points, num_outputs)
     ///
     /// # Panics
     ///
@@ -222,9 +223,9 @@ impl LUT {
     /// # Arguments
     ///
     /// * `points` - Array of N-dimensional points, shape: (num_points, ndim)
-    /// * `values` - Either a 1D array (single output) or 2D array (multiple outputs)
-    ///              For single output: shape is (num_points,)
-    ///              For multiple outputs: shape is (num_points, num_outputs)
+    /// * `values` - Either a 1D array (single output) or 2D array (multiple outputs).
+    ///   For single output: shape is (num_points,).
+    ///   For multiple outputs: shape is (num_points, num_outputs)
     ///
     /// # Panics
     ///
@@ -266,8 +267,8 @@ impl LUT {
     /// # Arguments
     ///
     /// * `points` - Array of N-dimensional points, shape: (num_points, ndim)
-    /// * `values` - 2D array where values[i] is the output vector at points[i]
-    ///              Shape: (num_points, num_outputs)
+    /// * `values` - 2D array where values[i] is the output vector at points[i].
+    ///   Shape: (num_points, num_outputs)
     pub fn new_multi(points: Vec<Vec<f64>>, values: Vec<Vec<f64>>) -> Self {
         if points.len() != values.len() {
             panic!("Points and values must have the same length");

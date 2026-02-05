@@ -78,8 +78,11 @@ impl<const N: usize> Block for Multiplier<N> {
 impl<const N: usize> AlgebraicBlock for Multiplier<N> {}
 
 // Common type aliases
+#[allow(dead_code)]
 pub type Multiplier2 = Multiplier<2>;
+#[allow(dead_code)]
 pub type Multiplier3 = Multiplier<3>;
+#[allow(dead_code)]
 pub type Multiplier4 = Multiplier<4>;
 
 #[cfg(test)]

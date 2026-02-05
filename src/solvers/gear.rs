@@ -117,6 +117,7 @@ pub fn compute_bdf_coefficients(order: usize, timesteps: &[f64]) -> (f64, Vec<f6
 ///
 /// This is a simplified version of PathSim's optimizer, using Newton iteration
 /// with optional Anderson acceleration.
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 struct NewtonAnderson {
     tolerance: f64,
@@ -132,6 +133,7 @@ impl Default for NewtonAnderson {
     }
 }
 
+#[allow(dead_code)]
 impl NewtonAnderson {
     fn new(tolerance: f64, max_iterations: usize) -> Self {
         Self {
@@ -161,9 +163,9 @@ impl NewtonAnderson {
         jac: Option<&DMatrix<f64>>,
     ) -> Result<(DVector<f64>, f64), SolverError> {
         let mut x_new = x.clone();
-        let mut error = f64::INFINITY;
+        let mut error;
 
-        for iter in 0..self.max_iterations {
+        for _iter in 0..self.max_iterations {
             // Residual: r = g - x
             let residual = g - &x_new;
             error = residual.norm();
@@ -301,7 +303,7 @@ impl GEARBase {
     fn startup_step<F, J>(
         &mut self,
         mut f: F,
-        mut jac: Option<J>,
+        _jac: Option<J>,
         t: f64,
         dt: f64,
     ) -> Result<SolverStepResult, SolverError>

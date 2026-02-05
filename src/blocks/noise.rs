@@ -2,8 +2,6 @@
 //!
 //! This module requires the `rand-support` feature.
 
-#![cfg(feature = "rand-support")]
-
 use crate::block::{AlgebraicBlock, Block};
 use rand::distributions::Distribution;
 use rand::rngs::StdRng;

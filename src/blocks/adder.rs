@@ -116,8 +116,11 @@ impl<const N: usize> Block for Adder<N> {
 impl<const N: usize> AlgebraicBlock for Adder<N> {}
 
 // Common type aliases
+#[allow(dead_code)]
 pub type Adder2 = Adder<2>;
+#[allow(dead_code)]
 pub type Adder3 = Adder<3>;
+#[allow(dead_code)]
 pub type Adder4 = Adder<4>;
 
 #[cfg(test)]

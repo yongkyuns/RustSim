@@ -1,6 +1,6 @@
 //! Scalar amplifier block: y = gain * u
 
-use crate::block::{AlgebraicBlock, Block, StepResult};
+use crate::block::{AlgebraicBlock, Block};
 
 /// Scalar amplifier: y = gain * u
 ///

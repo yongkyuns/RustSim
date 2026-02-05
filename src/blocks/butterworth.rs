@@ -27,7 +27,9 @@ use std::f64::consts::PI;
 pub struct ButterworthLowpass {
     input: f64,
     output: f64,
+    #[allow(dead_code)]
     fc: f64, // Cutoff frequency in Hz
+    #[allow(dead_code)]
     order: usize,
 
     // State for each second-order section (2 states per section)
@@ -100,9 +102,9 @@ impl Block for ButterworthLowpass {
         // Cascade second-order sections
         let mut x = self.input;
 
-        for (i, &(b0, b1, b2, a1, a2)) in self.sos_coeffs.iter().enumerate() {
+        for (i, &(b0, _b1, _b2, _a1, _a2)) in self.sos_coeffs.iter().enumerate() {
             let s1 = self.states[i * 2];
-            let s2 = self.states[i * 2 + 1];
+            let _s2 = self.states[i * 2 + 1];
 
             // Direct Form II Transposed
             let y = b0 * x + s1;
@@ -112,7 +114,7 @@ impl Block for ButterworthLowpass {
         self.output = x;
     }
 
-    fn step(&mut self, _t: f64, dt: f64) -> StepResult {
+    fn step(&mut self, _t: f64, _dt: f64) -> StepResult {
         // Euler integration of Direct Form II Transposed state equations
         let mut x = self.input;
 
@@ -178,7 +180,9 @@ impl DynamicBlock for ButterworthLowpass {
 pub struct ButterworthHighpass {
     input: f64,
     output: f64,
+    #[allow(dead_code)]
     fc: f64,
+    #[allow(dead_code)]
     order: usize,
     states: Vec<f64>,
     initial_states: Vec<f64>,
@@ -239,9 +243,9 @@ impl Block for ButterworthHighpass {
     fn update(&mut self, _t: f64) {
         let mut x = self.input;
 
-        for (i, &(b0, b1, b2, a1, a2)) in self.sos_coeffs.iter().enumerate() {
+        for (i, &(b0, _b1, _b2, _a1, _a2)) in self.sos_coeffs.iter().enumerate() {
             let s1 = self.states[i * 2];
-            let s2 = self.states[i * 2 + 1];
+            let _s2 = self.states[i * 2 + 1];
             let y = b0 * x + s1;
             x = y;
         }
@@ -249,7 +253,7 @@ impl Block for ButterworthHighpass {
         self.output = x;
     }
 
-    fn step(&mut self, _t: f64, dt: f64) -> StepResult {
+    fn step(&mut self, _t: f64, _dt: f64) -> StepResult {
         let mut x = self.input;
 
         for (i, &(b0, b1, b2, a1, a2)) in self.sos_coeffs.iter().enumerate() {
@@ -302,7 +306,9 @@ impl DynamicBlock for ButterworthHighpass {
 pub struct ButterworthBandpass {
     input: f64,
     output: f64,
+    #[allow(dead_code)]
     fc: [f64; 2],
+    #[allow(dead_code)]
     order: usize,
     states: Vec<f64>,
     initial_states: Vec<f64>,
@@ -364,9 +370,9 @@ impl Block for ButterworthBandpass {
     fn update(&mut self, _t: f64) {
         let mut x = self.input;
 
-        for (i, &(b0, b1, b2, a1, a2)) in self.sos_coeffs.iter().enumerate() {
+        for (i, &(b0, _b1, _b2, _a1, _a2)) in self.sos_coeffs.iter().enumerate() {
             let s1 = self.states[i * 2];
-            let s2 = self.states[i * 2 + 1];
+            let _s2 = self.states[i * 2 + 1];
             let y = b0 * x + s1;
             x = y;
         }
@@ -374,7 +380,7 @@ impl Block for ButterworthBandpass {
         self.output = x;
     }
 
-    fn step(&mut self, _t: f64, dt: f64) -> StepResult {
+    fn step(&mut self, _t: f64, _dt: f64) -> StepResult {
         let mut x = self.input;
 
         for (i, &(b0, b1, b2, a1, a2)) in self.sos_coeffs.iter().enumerate() {
@@ -427,7 +433,9 @@ impl DynamicBlock for ButterworthBandpass {
 pub struct Allpass {
     input: f64,
     output: f64,
+    #[allow(dead_code)]
     fs: f64,
+    #[allow(dead_code)]
     order: usize,
     states: Vec<f64>,
     initial_states: Vec<f64>,
@@ -492,9 +500,9 @@ impl Block for Allpass {
     fn update(&mut self, _t: f64) {
         let mut x = self.input;
 
-        for (i, &(b0, b1, b2, a1, a2)) in self.sos_coeffs.iter().enumerate() {
+        for (i, &(b0, _b1, _b2, _a1, _a2)) in self.sos_coeffs.iter().enumerate() {
             let s1 = self.states[i * 2];
-            let s2 = self.states[i * 2 + 1];
+            let _s2 = self.states[i * 2 + 1];
             let y = b0 * x + s1;
             x = y;
         }
@@ -502,7 +510,7 @@ impl Block for Allpass {
         self.output = x;
     }
 
-    fn step(&mut self, _t: f64, dt: f64) -> StepResult {
+    fn step(&mut self, _t: f64, _dt: f64) -> StepResult {
         let mut x = self.input;
 
         for (i, &(b0, b1, b2, a1, a2)) in self.sos_coeffs.iter().enumerate() {

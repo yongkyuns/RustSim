@@ -82,7 +82,7 @@ where
     }
 
     fn detect(&mut self, t: f64) -> EventDetection {
-        let Some((prev_result, prev_t)) = self.history else {
+        let Some((_prev_result, prev_t)) = self.history else {
             return EventDetection::default();
         };
 

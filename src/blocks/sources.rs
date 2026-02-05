@@ -274,7 +274,7 @@ impl SquareWave {
     /// Create square wave with amplitude, frequency (Hz), and duty cycle (0-1)
     pub fn new(amplitude: f64, frequency: f64, duty_cycle: f64) -> Self {
         assert!(
-            duty_cycle >= 0.0 && duty_cycle <= 1.0,
+            (0.0..=1.0).contains(&duty_cycle),
             "Duty cycle must be in [0, 1]"
         );
         Self {
@@ -523,7 +523,7 @@ impl Clock {
     pub fn new(period: f64, duty_cycle: f64) -> Self {
         assert!(period > 0.0, "Period must be positive");
         assert!(
-            duty_cycle >= 0.0 && duty_cycle <= 1.0,
+            (0.0..=1.0).contains(&duty_cycle),
             "Duty cycle must be in [0, 1]"
         );
         Self {

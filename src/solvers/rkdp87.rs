@@ -114,7 +114,7 @@ impl RKDP87 {
         let error_norm = scaled_error.max().max(1e-16);
         let success = error_norm <= 1.0;
 
-        let order = 7.min(8);
+        let order = 7;
         let mut timestep_scale = self.beta / error_norm.powf(1.0 / (order as f64 + 1.0));
         timestep_scale = timestep_scale.clamp(0.1, 10.0);
 

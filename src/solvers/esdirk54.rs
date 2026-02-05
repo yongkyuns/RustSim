@@ -142,7 +142,7 @@ impl ESDIRK54 {
         let success = error_norm <= 1.0;
 
         // Compute timestep scale factor
-        let order = 4.min(5); // min(m, n)
+        let order = 4; // min(m, n)
         let mut timestep_scale = self.beta / error_norm.powf(1.0 / (order as f64 + 1.0));
 
         // Clip rescale factor to reasonable range
@@ -203,7 +203,7 @@ impl Solver for ESDIRK54 {
 }
 
 impl ImplicitSolver for ESDIRK54 {
-    fn step<F>(&mut self, mut f: F, dt: f64) -> SolverStepResult
+    fn step<F>(&mut self, _f: F, dt: f64) -> SolverStepResult
     where
         F: FnMut(&DVector<f64>, f64) -> DVector<f64>,
     {
@@ -223,7 +223,7 @@ impl ImplicitSolver for ESDIRK54 {
         }
     }
 
-    fn solve<F, J>(&mut self, mut f: F, mut jac: Option<J>, dt: f64) -> Result<f64, SolverError>
+    fn solve<F, J>(&mut self, mut f: F, _jac: Option<J>, dt: f64) -> Result<f64, SolverError>
     where
         F: FnMut(&DVector<f64>, f64) -> DVector<f64>,
         J: FnMut(&DVector<f64>, f64) -> nalgebra::DMatrix<f64>,

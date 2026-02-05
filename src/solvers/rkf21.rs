@@ -96,7 +96,7 @@ impl RKF21 {
 
         // Compute timestep scale factor using accuracy order
         // Use minimum of propagating order (2) and embedded order (1)
-        let order = 1.min(2);
+        let order = 1;
         let mut timestep_scale = self.beta / error_norm.powf(1.0 / (order as f64 + 1.0));
 
         // Clip rescale factor to reasonable range [0.1, 10.0]

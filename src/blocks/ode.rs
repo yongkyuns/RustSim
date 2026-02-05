@@ -44,6 +44,7 @@ where
     /// Dynamics function
     dynamics: F,
     /// Number of input ports
+    #[allow(dead_code)]
     num_inputs: usize,
 
     // For buffer/revert
