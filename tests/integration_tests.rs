@@ -17,7 +17,7 @@ fn test_amplifier_basic() {
     amp.update(0.0);
 
     // Check output
-    assert_relative_eq!(amp*.outputs().get(0).unwrap(), 10.0, epsilon = 1e-10);
+    assert_relative_eq!(*amp.outputs().get(0).unwrap(), 10.0, epsilon = 1e-10);
 }
 
 #[test]
@@ -33,7 +33,7 @@ fn test_adder_basic() {
     adder.update(0.0);
 
     // Check output
-    assert_relative_eq!(adder*.outputs().get(0).unwrap(), 6.0, epsilon = 1e-10);
+    assert_relative_eq!(*adder.outputs().get(0).unwrap(), 6.0, epsilon = 1e-10);
 }
 
 #[test]
@@ -48,7 +48,7 @@ fn test_subtractor() {
     sub.update(0.0);
 
     // Check output
-    assert_relative_eq!(sub*.outputs().get(0).unwrap(), 2.0, epsilon = 1e-10);
+    assert_relative_eq!(*sub.outputs().get(0).unwrap(), 2.0, epsilon = 1e-10);
 }
 
 #[test]
@@ -59,11 +59,11 @@ fn test_constant_source() {
     constant.update(0.0);
 
     // Check output
-    assert_relative_eq!(constant*.outputs().get(0).unwrap(), 42.0, epsilon = 1e-10);
+    assert_relative_eq!(*constant.outputs().get(0).unwrap(), 42.0, epsilon = 1e-10);
 
     // Should stay constant
     constant.update(100.0);
-    assert_relative_eq!(constant*.outputs().get(0).unwrap(), 42.0, epsilon = 1e-10);
+    assert_relative_eq!(*constant.outputs().get(0).unwrap(), 42.0, epsilon = 1e-10);
 }
 
 // Note: FunctionSource is not in the public API yet

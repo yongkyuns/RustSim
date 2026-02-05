@@ -106,7 +106,7 @@ fn test_rkf21_properties() {
 #[test]
 fn test_rkf21_stage_iterator() {
     let problem = exponential_decay();
-    let mut solver = RKF21::new(problem.x0);
+    let mut solver = RKF21::new(problem.x0.clone());
     let dt = 0.1;
 
     solver.buffer(dt);
@@ -214,12 +214,9 @@ fn test_rkf21_adaptive() {
     let exact = get_exact_solution(&problem, problem.t_span.1);
     let error = (solver.state() - exact).norm();
 
-    // Error should be within tolerance range
-    assert!(
-        error < solver.tol_abs * 50.0,
-        "Error {} exceeds tolerance",
-        error
-    );
+    // Error should be within tolerance range (default tol_abs = 1e-6)
+    let tol_abs = 1e-6;
+    assert!(error < tol_abs * 50.0, "Error {} exceeds tolerance", error);
 }
 
 // ============================================================================
@@ -320,11 +317,9 @@ fn test_rkbs32_adaptive() {
     let exact = get_exact_solution(&problem, problem.t_span.1);
     let error = (solver.state() - exact).norm();
 
-    assert!(
-        error < solver.tol_abs * 10.0,
-        "Error {} exceeds tolerance",
-        error
-    );
+    // Error should be within tolerance range (default tol_abs = 1e-6)
+    let tol_abs = 1e-6;
+    assert!(error < tol_abs * 10.0, "Error {} exceeds tolerance", error);
 }
 
 // ============================================================================

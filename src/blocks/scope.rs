@@ -410,12 +410,12 @@ mod tests {
     fn test_scope_passthrough() {
         let mut scope = Scope::<2, 100>::new();
 
-        scope.set_input(0, 3.14);
-        scope.set_input(1, 2.71);
+        scope.set_input(0, 1.5);
+        scope.set_input(1, 2.5);
         scope.update(0.0);
 
         // Outputs should equal inputs (pass-through)
-        assert_eq!(scope.get_output(0), 3.14);
-        assert_eq!(scope.get_output(1), 2.71);
+        assert_eq!(scope.get_output(0), 1.5);
+        assert_eq!(scope.get_output(1), 2.5);
     }
 }

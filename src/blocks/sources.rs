@@ -771,9 +771,9 @@ mod tests {
 
     #[test]
     fn test_constant() {
-        let mut c = Constant::new(3.14);
+        let mut c = Constant::new(42.0);
         c.update(100.0); // Time doesn't matter
-        assert_eq!(c.get_output(0), 3.14);
+        assert_eq!(c.get_output(0), 42.0);
     }
 
     #[test]
