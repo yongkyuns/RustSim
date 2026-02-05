@@ -216,9 +216,9 @@ impl ImplicitSolver for ESDIRK32 {
 
         // Butcher tableau coefficients (lower triangular part)
         let bt: [&[f64]; 4] = [
-            &[],                                   // Stage 0: explicit
-            &[1.0 / 2.0, 1.0 / 2.0],               // Stage 1
-            &[5.0 / 8.0, 3.0 / 8.0, 1.0 / 2.0],    // Stage 2
+            &[],                                             // Stage 0: explicit
+            &[1.0 / 2.0, 1.0 / 2.0],                         // Stage 1
+            &[5.0 / 8.0, 3.0 / 8.0, 1.0 / 2.0],              // Stage 2
             &[7.0 / 18.0, 1.0 / 3.0, -2.0 / 9.0, 1.0 / 2.0], // Stage 3
         ];
 
@@ -292,7 +292,11 @@ mod tests {
         for _ in 0..n_steps {
             solver.buffer(dt);
             for _ in 0..4 {
-                let _ = solver.solve(|x, _t| -x, None::<fn(&DVector<f64>, f64) -> nalgebra::DMatrix<f64>>, dt);
+                let _ = solver.solve(
+                    |x, _t| -x,
+                    None::<fn(&DVector<f64>, f64) -> nalgebra::DMatrix<f64>>,
+                    dt,
+                );
             }
         }
 

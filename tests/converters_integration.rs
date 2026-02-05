@@ -1,7 +1,7 @@
 //! Integration tests for ADC and DAC converters
 
-use rustsim::blocks::{ADC, DAC};
 use rustsim::block::Block;
+use rustsim::blocks::{ADC, DAC};
 
 #[test]
 fn test_adc_dac_round_trip() {
@@ -29,9 +29,13 @@ fn test_adc_dac_round_trip() {
         let error = (val - reconstructed).abs();
         let max_error = 5.0 / 255.0; // Maximum quantization error for 8-bit
 
-        assert!(error <= max_error,
-                "Round-trip error too large: input={}, output={}, error={}",
-                val, reconstructed, error);
+        assert!(
+            error <= max_error,
+            "Round-trip error too large: input={}, output={}, error={}",
+            val,
+            reconstructed,
+            error
+        );
     }
 }
 
@@ -52,7 +56,10 @@ fn test_adc_periodic_sampling() {
     let same_code: Vec<f64> = (0..4).map(|i| adc.get_output(i)).collect();
 
     // Output should still be the same (held from last sample)
-    assert_eq!(first_code, same_code, "ADC should hold previous value between samples");
+    assert_eq!(
+        first_code, same_code,
+        "ADC should hold previous value between samples"
+    );
 
     // Now sample at t=1.0
     adc.update(1.0);
@@ -85,14 +92,20 @@ fn test_dac_periodic_update() {
     let same_output = dac.get_output(0);
 
     // Output should still be the same (held from last update)
-    assert_eq!(first_output, same_output, "DAC should hold previous value between updates");
+    assert_eq!(
+        first_output, same_output,
+        "DAC should hold previous value between updates"
+    );
 
     // Now update at t=1.0
     dac.update(1.0);
     let new_output = dac.get_output(0);
 
     // Output should be different now
-    assert_ne!(first_output, new_output, "DAC should update at scheduled time");
+    assert_ne!(
+        first_output, new_output,
+        "DAC should update at scheduled time"
+    );
 }
 
 #[test]
@@ -150,7 +163,11 @@ fn test_adc_all_codes() {
         adc.update(0.0);
 
         let actual: Vec<f64> = (0..2).map(|i| adc.get_output(i)).collect();
-        assert_eq!(actual, *expected, "Input {} should produce code {:?}", input, expected);
+        assert_eq!(
+            actual, *expected,
+            "Input {} should produce code {:?}",
+            input, expected
+        );
     }
 }
 
@@ -174,8 +191,13 @@ fn test_dac_all_codes() {
         dac.update(0.0);
 
         let actual = dac.get_output(0);
-        assert!((actual - expected).abs() < 1e-10,
-                "Code ({}, {}) should produce output {}, got {}",
-                bit0, bit1, expected, actual);
+        assert!(
+            (actual - expected).abs() < 1e-10,
+            "Code ({}, {}) should produce output {}, got {}",
+            bit0,
+            bit1,
+            expected,
+            actual
+        );
     }
 }

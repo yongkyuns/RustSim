@@ -241,7 +241,11 @@ mod tests {
         }
 
         // After settling, output should be close to 1.0
-        assert!((diff.value() - 1.0).abs() < 0.1, "Expected ~1.0, got {}", diff.value());
+        assert!(
+            (diff.value() - 1.0).abs() < 0.1,
+            "Expected ~1.0, got {}",
+            diff.value()
+        );
     }
 
     #[test]

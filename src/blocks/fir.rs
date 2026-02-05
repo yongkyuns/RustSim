@@ -336,7 +336,7 @@ mod tests {
     #[test]
     fn test_fir_moving_average() {
         // Moving average of 3 samples
-        let mut fir = FIR::<3>::new([1.0/3.0, 1.0/3.0, 1.0/3.0], 1.0, 0.0);
+        let mut fir = FIR::<3>::new([1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0], 1.0, 0.0);
 
         // First sample at t=0
         run_filter_step(&mut fir, 3.0, 0.0, 1.0);

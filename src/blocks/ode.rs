@@ -175,7 +175,8 @@ where
 
         // y_new = y + dt/6 * (k1 + 2*k2 + 2*k3 + k4)
         for i in 0..N {
-            self.state[i] += dt / 6.0 * (self.k1[i] + 2.0 * self.k2[i] + 2.0 * self.k3[i] + self.k4[i]);
+            self.state[i] +=
+                dt / 6.0 * (self.k1[i] + 2.0 * self.k2[i] + 2.0 * self.k3[i] + self.k4[i]);
         }
 
         self.outputs.copy_from_slice(&self.state);
@@ -238,7 +239,13 @@ mod tests {
         // At t=1, y should be approximately e ≈ 2.71828
         let expected = std::f64::consts::E;
         let error = (ode.state_value(0) - expected).abs();
-        assert!(error < 1e-4, "Error: {}, expected: {}, got: {}", error, expected, ode.state_value(0));
+        assert!(
+            error < 1e-4,
+            "Error: {}, expected: {}, got: {}",
+            error,
+            expected,
+            ode.state_value(0)
+        );
     }
 
     #[test]
@@ -246,8 +253,8 @@ mod tests {
         // d²x/dt² = -x, x(0) = 1, v(0) = 0
         // Solution: x(t) = cos(t), v(t) = -sin(t)
         let mut ode = ODE::<2, _>::new([1.0, 0.0], |_t, state, _inputs, derivs| {
-            derivs[0] = state[1];      // dx/dt = v
-            derivs[1] = -state[0];     // dv/dt = -x
+            derivs[0] = state[1]; // dx/dt = v
+            derivs[1] = -state[0]; // dv/dt = -x
         });
 
         let dt = 0.01;
@@ -261,8 +268,16 @@ mod tests {
         }
 
         // Should return to initial state (allow some error accumulation over full period)
-        assert!((ode.state_value(0) - 1.0).abs() < 1e-2, "Position error: {}", (ode.state_value(0) - 1.0).abs());
-        assert!(ode.state_value(1).abs() < 1e-2, "Velocity error: {}", ode.state_value(1).abs());
+        assert!(
+            (ode.state_value(0) - 1.0).abs() < 1e-2,
+            "Position error: {}",
+            (ode.state_value(0) - 1.0).abs()
+        );
+        assert!(
+            ode.state_value(1).abs() < 1e-2,
+            "Velocity error: {}",
+            ode.state_value(1).abs()
+        );
     }
 
     #[test]

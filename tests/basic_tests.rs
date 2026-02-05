@@ -1,9 +1,9 @@
 //! Basic integration tests for RustSim using only available blocks
 
 use approx::assert_relative_eq;
-use rustsim::prelude::*;
-use rustsim::solvers::{ExplicitSolver, RK4, Solver};
 use nalgebra::DVector;
+use rustsim::prelude::*;
+use rustsim::solvers::{ExplicitSolver, Solver, RK4};
 
 #[test]
 fn test_adder_basic() {
@@ -53,9 +53,7 @@ fn test_rk4_exponential_decay() {
         solver.buffer(dt);
 
         // dx/dt = -k*x
-        let f = |x: &DVector<f64>, _t: f64| {
-            DVector::from_vec(vec![-k * x[0]])
-        };
+        let f = |x: &DVector<f64>, _t: f64| DVector::from_vec(vec![-k * x[0]]);
 
         // RK4 requires 4 stage evaluations
         for _ in 0..4 {

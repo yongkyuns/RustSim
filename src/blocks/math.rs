@@ -572,7 +572,11 @@ impl<const N: usize> Block for Max<N> {
 
     #[inline]
     fn update(&mut self, _t: f64) {
-        self.output = self.inputs.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        self.output = self
+            .inputs
+            .iter()
+            .copied()
+            .fold(f64::NEG_INFINITY, f64::max);
     }
 
     fn reset(&mut self) {
@@ -784,8 +788,13 @@ mod tests {
         for (input, expected) in test_cases {
             block.set_input(0, input);
             block.update(0.0);
-            assert!((block.get_output(0) - expected).abs() < 1e-10,
-                   "log10({}) = {}, expected {}", input, block.get_output(0), expected);
+            assert!(
+                (block.get_output(0) - expected).abs() < 1e-10,
+                "log10({}) = {}, expected {}",
+                input,
+                block.get_output(0),
+                expected
+            );
         }
     }
 

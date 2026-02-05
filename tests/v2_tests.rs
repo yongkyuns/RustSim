@@ -478,7 +478,8 @@ fn test_feedback_loop() {
             self.integrator.update(self.time);
             self.gain.set_input(0, self.integrator.get_output(0));
             self.gain.update(self.time);
-            self.integrator.set_input(0, self.gain.get_output(0) - self.integrator.get_output(0));
+            self.integrator
+                .set_input(0, self.gain.get_output(0) - self.integrator.get_output(0));
             self.integrator.step(self.time, dt);
             self.time += dt;
         }

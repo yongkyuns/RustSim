@@ -84,15 +84,11 @@ fn test_brusselator_rkbs32() {
         }
 
         let reference = brusselator_reference(t_final, &x0, a, b);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 1000.0,
-            "RKBS32 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 1000.0, "RKBS32 tol={} error={}", tol, error);
     }
 }
 
@@ -140,15 +136,11 @@ fn test_brusselator_rkf45() {
         }
 
         let reference = brusselator_reference(t_final, &x0, a, b);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 500.0,
-            "RKF45 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 500.0, "RKF45 tol={} error={}", tol, error);
     }
 }
 
@@ -196,15 +188,11 @@ fn test_brusselator_rkck54() {
         }
 
         let reference = brusselator_reference(t_final, &x0, a, b);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 500.0,
-            "RKCK54 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 500.0, "RKCK54 tol={} error={}", tol, error);
     }
 }
 
@@ -252,15 +240,11 @@ fn test_brusselator_rkdp54() {
         }
 
         let reference = brusselator_reference(t_final, &x0, a, b);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 200.0,
-            "RKDP54 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 200.0, "RKDP54 tol={} error={}", tol, error);
     }
 }
 
@@ -308,15 +292,11 @@ fn test_brusselator_rkv65() {
         }
 
         let reference = brusselator_reference(t_final, &x0, a, b);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 200.0,
-            "RKV65 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 200.0, "RKV65 tol={} error={}", tol, error);
     }
 }
 
@@ -364,14 +344,10 @@ fn test_brusselator_rkdp87() {
         }
 
         let reference = brusselator_reference(t_final, &x0, a, b);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 100.0,
-            "RKDP87 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 100.0, "RKDP87 tol={} error={}", tol, error);
     }
 }

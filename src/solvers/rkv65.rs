@@ -88,11 +88,7 @@ impl RKV65 {
         ];
 
         // TR = [a-b for a, b in zip(_A1, _A2)]
-        let tr: Vec<f64> = a1
-            .iter()
-            .zip(a2.iter())
-            .map(|(a, b)| a - b)
-            .collect();
+        let tr: Vec<f64> = a1.iter().zip(a2.iter()).map(|(a, b)| a - b).collect();
 
         let mut error_slope = DVector::zeros(self.state.len());
         for (i, &coef) in tr.iter().enumerate() {

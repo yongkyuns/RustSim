@@ -25,7 +25,7 @@ use crate::block::{Block, DynamicBlock, StepResult};
 pub struct LowpassRC {
     input: f64,
     output: f64,
-    tau: f64,  // Time constant
+    tau: f64, // Time constant
 
     // State
     state: f64,
@@ -184,11 +184,11 @@ impl DynamicBlock for LowpassRC {
 pub struct HighpassRC {
     input: f64,
     output: f64,
-    tau: f64,  // Time constant
+    tau: f64, // Time constant
 
     // State
-    state: f64,          // Filter state
-    prev_input: f64,     // Previous input for difference
+    state: f64,      // Filter state
+    prev_input: f64, // Previous input for difference
     dt: f64,
 
     // Initial conditions
@@ -442,9 +442,9 @@ mod tests {
     #[test]
     fn test_highpass_ac() {
         // AC signal should pass through (approximately)
-        let mut hpf = HighpassRC::new(0.01);  // Short time constant
+        let mut hpf = HighpassRC::new(0.01); // Short time constant
         let dt = 0.001;
-        let freq = 10.0;  // 10 Hz
+        let freq = 10.0; // 10 Hz
         let omega = 2.0 * std::f64::consts::PI * freq;
 
         // Let it settle first
@@ -470,7 +470,11 @@ mod tests {
 
         // Should pass high frequency with some attenuation
         // The filter has phase shift and some gain reduction at passband frequencies
-        assert!(max_output > 0.3, "Expected max_output > 0.3, got {}", max_output);
+        assert!(
+            max_output > 0.3,
+            "Expected max_output > 0.3, got {}",
+            max_output
+        );
     }
 
     #[test]

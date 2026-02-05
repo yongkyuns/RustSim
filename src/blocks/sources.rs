@@ -19,7 +19,10 @@ pub struct Constant {
 
 impl Constant {
     pub fn new(value: f64) -> Self {
-        Self { output: value, value }
+        Self {
+            output: value,
+            value,
+        }
     }
 
     pub fn value(&self) -> f64 {
@@ -37,8 +40,12 @@ impl Block for Constant {
     const NUM_OUTPUTS: usize = 1;
     const IS_DYNAMIC: bool = false;
 
-    fn inputs(&self) -> &[f64] { &[] }
-    fn inputs_mut(&mut self) -> &mut [f64] { &mut [] }
+    fn inputs(&self) -> &[f64] {
+        &[]
+    }
+    fn inputs_mut(&mut self) -> &mut [f64] {
+        &mut []
+    }
 
     fn outputs(&self) -> &[f64] {
         std::slice::from_ref(&self.output)
@@ -84,9 +91,15 @@ impl Sinusoidal {
         Self::new(1.0, frequency, 0.0)
     }
 
-    pub fn amplitude(&self) -> f64 { self.amplitude }
-    pub fn frequency(&self) -> f64 { self.frequency }
-    pub fn phase(&self) -> f64 { self.phase }
+    pub fn amplitude(&self) -> f64 {
+        self.amplitude
+    }
+    pub fn frequency(&self) -> f64 {
+        self.frequency
+    }
+    pub fn phase(&self) -> f64 {
+        self.phase
+    }
 }
 
 impl Block for Sinusoidal {
@@ -94,8 +107,12 @@ impl Block for Sinusoidal {
     const NUM_OUTPUTS: usize = 1;
     const IS_DYNAMIC: bool = false;
 
-    fn inputs(&self) -> &[f64] { &[] }
-    fn inputs_mut(&mut self) -> &mut [f64] { &mut [] }
+    fn inputs(&self) -> &[f64] {
+        &[]
+    }
+    fn inputs_mut(&mut self) -> &mut [f64] {
+        &mut []
+    }
 
     fn outputs(&self) -> &[f64] {
         std::slice::from_ref(&self.output)
@@ -139,8 +156,12 @@ impl Step {
         Self::new(1.0, 0.0)
     }
 
-    pub fn amplitude(&self) -> f64 { self.amplitude }
-    pub fn t0(&self) -> f64 { self.t0 }
+    pub fn amplitude(&self) -> f64 {
+        self.amplitude
+    }
+    pub fn t0(&self) -> f64 {
+        self.t0
+    }
 }
 
 impl Block for Step {
@@ -148,8 +169,12 @@ impl Block for Step {
     const NUM_OUTPUTS: usize = 1;
     const IS_DYNAMIC: bool = false;
 
-    fn inputs(&self) -> &[f64] { &[] }
-    fn inputs_mut(&mut self) -> &mut [f64] { &mut [] }
+    fn inputs(&self) -> &[f64] {
+        &[]
+    }
+    fn inputs_mut(&mut self) -> &mut [f64] {
+        &mut []
+    }
 
     fn outputs(&self) -> &[f64] {
         std::slice::from_ref(&self.output)
@@ -193,8 +218,12 @@ impl Ramp {
         Self::new(1.0, 0.0)
     }
 
-    pub fn slope(&self) -> f64 { self.slope }
-    pub fn t0(&self) -> f64 { self.t0 }
+    pub fn slope(&self) -> f64 {
+        self.slope
+    }
+    pub fn t0(&self) -> f64 {
+        self.t0
+    }
 }
 
 impl Block for Ramp {
@@ -202,8 +231,12 @@ impl Block for Ramp {
     const NUM_OUTPUTS: usize = 1;
     const IS_DYNAMIC: bool = false;
 
-    fn inputs(&self) -> &[f64] { &[] }
-    fn inputs_mut(&mut self) -> &mut [f64] { &mut [] }
+    fn inputs(&self) -> &[f64] {
+        &[]
+    }
+    fn inputs_mut(&mut self) -> &mut [f64] {
+        &mut []
+    }
 
     fn outputs(&self) -> &[f64] {
         std::slice::from_ref(&self.output)
@@ -240,7 +273,10 @@ pub struct SquareWave {
 impl SquareWave {
     /// Create square wave with amplitude, frequency (Hz), and duty cycle (0-1)
     pub fn new(amplitude: f64, frequency: f64, duty_cycle: f64) -> Self {
-        assert!(duty_cycle >= 0.0 && duty_cycle <= 1.0, "Duty cycle must be in [0, 1]");
+        assert!(
+            duty_cycle >= 0.0 && duty_cycle <= 1.0,
+            "Duty cycle must be in [0, 1]"
+        );
         Self {
             output: amplitude, // Start high
             amplitude,
@@ -254,9 +290,15 @@ impl SquareWave {
         Self::new(amplitude, frequency, 0.5)
     }
 
-    pub fn amplitude(&self) -> f64 { self.amplitude }
-    pub fn frequency(&self) -> f64 { self.frequency }
-    pub fn duty_cycle(&self) -> f64 { self.duty_cycle }
+    pub fn amplitude(&self) -> f64 {
+        self.amplitude
+    }
+    pub fn frequency(&self) -> f64 {
+        self.frequency
+    }
+    pub fn duty_cycle(&self) -> f64 {
+        self.duty_cycle
+    }
 }
 
 impl Block for SquareWave {
@@ -264,8 +306,12 @@ impl Block for SquareWave {
     const NUM_OUTPUTS: usize = 1;
     const IS_DYNAMIC: bool = false;
 
-    fn inputs(&self) -> &[f64] { &[] }
-    fn inputs_mut(&mut self) -> &mut [f64] { &mut [] }
+    fn inputs(&self) -> &[f64] {
+        &[]
+    }
+    fn inputs_mut(&mut self) -> &mut [f64] {
+        &mut []
+    }
 
     fn outputs(&self) -> &[f64] {
         std::slice::from_ref(&self.output)
@@ -310,8 +356,12 @@ impl TriangleWave {
         }
     }
 
-    pub fn amplitude(&self) -> f64 { self.amplitude }
-    pub fn frequency(&self) -> f64 { self.frequency }
+    pub fn amplitude(&self) -> f64 {
+        self.amplitude
+    }
+    pub fn frequency(&self) -> f64 {
+        self.frequency
+    }
 }
 
 impl Block for TriangleWave {
@@ -319,8 +369,12 @@ impl Block for TriangleWave {
     const NUM_OUTPUTS: usize = 1;
     const IS_DYNAMIC: bool = false;
 
-    fn inputs(&self) -> &[f64] { &[] }
-    fn inputs_mut(&mut self) -> &mut [f64] { &mut [] }
+    fn inputs(&self) -> &[f64] {
+        &[]
+    }
+    fn inputs_mut(&mut self) -> &mut [f64] {
+        &mut []
+    }
 
     fn outputs(&self) -> &[f64] {
         std::slice::from_ref(&self.output)
@@ -363,10 +417,25 @@ pub struct Pulse {
 
 impl Pulse {
     /// Create pulse with amplitude, period, pulse_width, rise_time, fall_time
-    pub fn new(amplitude: f64, period: f64, pulse_width: f64, rise_time: f64, fall_time: f64) -> Self {
-        assert!(pulse_width > 0.0 && pulse_width < period, "Pulse width must be in (0, period)");
-        assert!(rise_time >= 0.0 && fall_time >= 0.0, "Rise and fall times must be non-negative");
-        assert!(rise_time + fall_time < pulse_width, "Rise + fall time must be less than pulse width");
+    pub fn new(
+        amplitude: f64,
+        period: f64,
+        pulse_width: f64,
+        rise_time: f64,
+        fall_time: f64,
+    ) -> Self {
+        assert!(
+            pulse_width > 0.0 && pulse_width < period,
+            "Pulse width must be in (0, period)"
+        );
+        assert!(
+            rise_time >= 0.0 && fall_time >= 0.0,
+            "Rise and fall times must be non-negative"
+        );
+        assert!(
+            rise_time + fall_time < pulse_width,
+            "Rise + fall time must be less than pulse width"
+        );
 
         Self {
             output: 0.0,
@@ -383,9 +452,15 @@ impl Pulse {
         Self::new(amplitude, period, pulse_width, 0.0, 0.0)
     }
 
-    pub fn amplitude(&self) -> f64 { self.amplitude }
-    pub fn period(&self) -> f64 { self.period }
-    pub fn pulse_width(&self) -> f64 { self.pulse_width }
+    pub fn amplitude(&self) -> f64 {
+        self.amplitude
+    }
+    pub fn period(&self) -> f64 {
+        self.period
+    }
+    pub fn pulse_width(&self) -> f64 {
+        self.pulse_width
+    }
 }
 
 impl Block for Pulse {
@@ -393,8 +468,12 @@ impl Block for Pulse {
     const NUM_OUTPUTS: usize = 1;
     const IS_DYNAMIC: bool = false;
 
-    fn inputs(&self) -> &[f64] { &[] }
-    fn inputs_mut(&mut self) -> &mut [f64] { &mut [] }
+    fn inputs(&self) -> &[f64] {
+        &[]
+    }
+    fn inputs_mut(&mut self) -> &mut [f64] {
+        &mut []
+    }
 
     fn outputs(&self) -> &[f64] {
         std::slice::from_ref(&self.output)
@@ -415,7 +494,8 @@ impl Block for Pulse {
             self.output = self.amplitude;
         } else if t_in_period < self.pulse_width {
             // Falling edge
-            let fall_progress = (t_in_period - (self.pulse_width - self.fall_time)) / self.fall_time;
+            let fall_progress =
+                (t_in_period - (self.pulse_width - self.fall_time)) / self.fall_time;
             self.output = self.amplitude * (1.0 - fall_progress);
         } else {
             // Low
@@ -442,7 +522,10 @@ impl Clock {
     /// Create clock with period and duty cycle (0-1)
     pub fn new(period: f64, duty_cycle: f64) -> Self {
         assert!(period > 0.0, "Period must be positive");
-        assert!(duty_cycle >= 0.0 && duty_cycle <= 1.0, "Duty cycle must be in [0, 1]");
+        assert!(
+            duty_cycle >= 0.0 && duty_cycle <= 1.0,
+            "Duty cycle must be in [0, 1]"
+        );
         Self {
             output: 1.0, // Start high
             period,
@@ -455,8 +538,12 @@ impl Clock {
         Self::new(period, 0.5)
     }
 
-    pub fn period(&self) -> f64 { self.period }
-    pub fn duty_cycle(&self) -> f64 { self.duty_cycle }
+    pub fn period(&self) -> f64 {
+        self.period
+    }
+    pub fn duty_cycle(&self) -> f64 {
+        self.duty_cycle
+    }
 }
 
 impl Block for Clock {
@@ -464,8 +551,12 @@ impl Block for Clock {
     const NUM_OUTPUTS: usize = 1;
     const IS_DYNAMIC: bool = false;
 
-    fn inputs(&self) -> &[f64] { &[] }
-    fn inputs_mut(&mut self) -> &mut [f64] { &mut [] }
+    fn inputs(&self) -> &[f64] {
+        &[]
+    }
+    fn inputs_mut(&mut self) -> &mut [f64] {
+        &mut []
+    }
 
     fn outputs(&self) -> &[f64] {
         std::slice::from_ref(&self.output)
@@ -520,9 +611,15 @@ impl GaussianPulse {
         Self::new(1.0, 1e3, 0.0)
     }
 
-    pub fn amplitude(&self) -> f64 { self.amplitude }
-    pub fn f_max(&self) -> f64 { self.f_max }
-    pub fn tau(&self) -> f64 { self.tau }
+    pub fn amplitude(&self) -> f64 {
+        self.amplitude
+    }
+    pub fn f_max(&self) -> f64 {
+        self.f_max
+    }
+    pub fn tau(&self) -> f64 {
+        self.tau
+    }
 }
 
 impl Block for GaussianPulse {
@@ -530,8 +627,12 @@ impl Block for GaussianPulse {
     const NUM_OUTPUTS: usize = 1;
     const IS_DYNAMIC: bool = false;
 
-    fn inputs(&self) -> &[f64] { &[] }
-    fn inputs_mut(&mut self) -> &mut [f64] { &mut [] }
+    fn inputs(&self) -> &[f64] {
+        &[]
+    }
+    fn inputs_mut(&mut self) -> &mut [f64] {
+        &mut []
+    }
 
     fn outputs(&self) -> &[f64] {
         std::slice::from_ref(&self.output)
@@ -595,11 +696,21 @@ impl Chirp {
         Self::new(1.0, 1.0, 1.0, 1.0, 0.0)
     }
 
-    pub fn amplitude(&self) -> f64 { self.amplitude }
-    pub fn f0(&self) -> f64 { self.f0 }
-    pub fn bandwidth(&self) -> f64 { self.bandwidth }
-    pub fn sweep_time(&self) -> f64 { self.sweep_time }
-    pub fn phase(&self) -> f64 { self.phase }
+    pub fn amplitude(&self) -> f64 {
+        self.amplitude
+    }
+    pub fn f0(&self) -> f64 {
+        self.f0
+    }
+    pub fn bandwidth(&self) -> f64 {
+        self.bandwidth
+    }
+    pub fn sweep_time(&self) -> f64 {
+        self.sweep_time
+    }
+    pub fn phase(&self) -> f64 {
+        self.phase
+    }
 
     /// Triangle wave helper: -1 to +1 with frequency f
     fn triangle_wave(t: f64, f: f64) -> f64 {
@@ -618,8 +729,12 @@ impl Block for Chirp {
     const NUM_OUTPUTS: usize = 1;
     const IS_DYNAMIC: bool = false;
 
-    fn inputs(&self) -> &[f64] { &[] }
-    fn inputs_mut(&mut self) -> &mut [f64] { &mut [] }
+    fn inputs(&self) -> &[f64] {
+        &[]
+    }
+    fn inputs_mut(&mut self) -> &mut [f64] {
+        &mut []
+    }
 
     fn outputs(&self) -> &[f64] {
         std::slice::from_ref(&self.output)

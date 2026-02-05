@@ -64,7 +64,11 @@ const SOL_SCALE_MAX: f64 = 10.0;
 /// # Panics
 /// Panics if order < 1 or if timesteps buffer is too small
 pub fn compute_bdf_coefficients(order: usize, timesteps: &[f64]) -> (f64, Vec<f64>) {
-    assert!(order >= 1, "BDF coefficients of order '{}' not possible!", order);
+    assert!(
+        order >= 1,
+        "BDF coefficients of order '{}' not possible!",
+        order
+    );
 
     // Quit early for order 1 (backward Euler)
     if timesteps.len() < 2 {
@@ -97,7 +101,9 @@ pub fn compute_bdf_coefficients(order: usize, timesteps: &[f64]) -> (f64, Vec<f6
     }
 
     // Solve the linear system
-    let alphas = a_matrix.lu().solve(&b_vec)
+    let alphas = a_matrix
+        .lu()
+        .solve(&b_vec)
         .expect("Failed to solve BDF coefficient system");
 
     // Extract beta and alpha coefficients
@@ -128,7 +134,10 @@ impl Default for NewtonAnderson {
 
 impl NewtonAnderson {
     fn new(tolerance: f64, max_iterations: usize) -> Self {
-        Self { tolerance, max_iterations }
+        Self {
+            tolerance,
+            max_iterations,
+        }
     }
 
     fn reset(&mut self) {
@@ -199,8 +208,8 @@ struct GEARBase {
     initial: DVector<f64>,
     history: VecDeque<DVector<f64>>,
     history_dt: VecDeque<f64>,
-    n: usize,  // Order of main method
-    m: usize,  // Order of error estimate method
+    n: usize, // Order of main method
+    m: usize, // Order of error estimate method
     tol_abs: f64,
     tol_rel: f64,
     beta: f64,
@@ -215,7 +224,7 @@ struct GEARBase {
 impl GEARBase {
     fn new(initial: DVector<f64>, n: usize, m: usize, tol_abs: f64, tol_rel: f64) -> Self {
         let state_dim = initial.len();
-        let max_history = n.max(6);  // GEAR52A needs up to 6
+        let max_history = n.max(6); // GEAR52A needs up to 6
 
         Self {
             state: initial.clone(),
@@ -232,7 +241,7 @@ impl GEARBase {
             startup_state: initial.clone(),
             startup_history: VecDeque::with_capacity(2),
             startup_stage: 0,
-            startup_slopes: vec![DVector::zeros(state_dim); 4],  // ESDIRK32 has 4 stages
+            startup_slopes: vec![DVector::zeros(state_dim); 4], // ESDIRK32 has 4 stages
         }
     }
 
@@ -268,7 +277,9 @@ impl GEARBase {
         self.history_dt.pop_front();
 
         if self.needs_startup {
-            self.startup_state = self.startup_history.pop_front()
+            self.startup_state = self
+                .startup_history
+                .pop_front()
                 .ok_or(SolverError::EmptyHistory)?;
             self.startup_stage = 0;
         }
@@ -301,7 +312,9 @@ impl GEARBase {
         // ESDIRK32 coefficients (simplified TR-BDF2)
         let gamma = 1.0 - 1.0 / f64::sqrt(2.0);
 
-        let x0 = self.startup_history.front()
+        let x0 = self
+            .startup_history
+            .front()
             .ok_or(SolverError::EmptyHistory)?;
 
         match self.startup_stage {
@@ -428,12 +441,7 @@ impl GEARBase {
         (success, error_norm, timestep_rescale)
     }
 
-    fn step<F>(
-        &mut self,
-        mut f: F,
-        t: f64,
-        dt: f64,
-    ) -> SolverStepResult
+    fn step<F>(&mut self, mut f: F, t: f64, dt: f64) -> SolverStepResult
     where
         F: FnMut(&DVector<f64>, f64) -> DVector<f64>,
     {
@@ -892,7 +900,9 @@ impl Solver for GEAR52A {
             if self.inner.startup_history.len() >= 2 {
                 self.inner.startup_history.pop_back();
             }
-            self.inner.startup_history.push_front(self.inner.state.clone());
+            self.inner
+                .startup_history
+                .push_front(self.inner.state.clone());
             self.inner.startup_stage = 0;
         }
     }
@@ -979,7 +989,7 @@ impl ImplicitSolver for GEAR52A {
 
         SolverStepResult {
             success: success_m,
-            error_norm: error_norm_p,  // Use higher order estimate for reporting
+            error_norm: error_norm_p, // Use higher order estimate for reporting
             scale: Some(scale_m),
         }
     }

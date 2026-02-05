@@ -26,10 +26,7 @@ fn vanderpol_reference(t: f64, x0: &[f64; 2], mu: f64) -> [f64; 2] {
         solver.buffer(dt_base);
 
         let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-            DVector::from_vec(vec![
-                x[1],
-                mu * (1.0 - x[0] * x[0]) * x[1] - x[0],
-            ])
+            DVector::from_vec(vec![x[1], mu * (1.0 - x[0] * x[0]) * x[1] - x[0]])
         };
 
         // ESDIRK54 has 7 stages
@@ -48,10 +45,7 @@ fn test_vanderpol_esdirk32() {
     let t_final = mu;
 
     let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![
-            x[1],
-            mu * (1.0 - x[0] * x[0]) * x[1] - x[0],
-        ])
+        DVector::from_vec(vec![x[1], mu * (1.0 - x[0] * x[0]) * x[1] - x[0]])
     };
 
     let tolerances = [1e-6];
@@ -87,15 +81,11 @@ fn test_vanderpol_esdirk32() {
         }
 
         let reference = vanderpol_reference(t_final, &x0, mu);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 100.0,
-            "ESDIRK32 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 100.0, "ESDIRK32 tol={} error={}", tol, error);
     }
 }
 
@@ -106,10 +96,7 @@ fn test_vanderpol_esdirk43() {
     let t_final = mu;
 
     let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![
-            x[1],
-            mu * (1.0 - x[0] * x[0]) * x[1] - x[0],
-        ])
+        DVector::from_vec(vec![x[1], mu * (1.0 - x[0] * x[0]) * x[1] - x[0]])
     };
 
     let tolerances = [1e-6];
@@ -145,15 +132,11 @@ fn test_vanderpol_esdirk43() {
         }
 
         let reference = vanderpol_reference(t_final, &x0, mu);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 100.0,
-            "ESDIRK43 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 100.0, "ESDIRK43 tol={} error={}", tol, error);
     }
 }
 
@@ -164,10 +147,7 @@ fn test_vanderpol_gear21() {
     let t_final = mu;
 
     let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![
-            x[1],
-            mu * (1.0 - x[0] * x[0]) * x[1] - x[0],
-        ])
+        DVector::from_vec(vec![x[1], mu * (1.0 - x[0] * x[0]) * x[1] - x[0]])
     };
 
     let tolerances = [1e-6];
@@ -200,15 +180,11 @@ fn test_vanderpol_gear21() {
         }
 
         let reference = vanderpol_reference(t_final, &x0, mu);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 200.0,
-            "GEAR21 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 200.0, "GEAR21 tol={} error={}", tol, error);
     }
 }
 
@@ -219,10 +195,7 @@ fn test_vanderpol_gear32() {
     let t_final = mu;
 
     let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![
-            x[1],
-            mu * (1.0 - x[0] * x[0]) * x[1] - x[0],
-        ])
+        DVector::from_vec(vec![x[1], mu * (1.0 - x[0] * x[0]) * x[1] - x[0]])
     };
 
     let tolerances = [1e-6];
@@ -254,15 +227,11 @@ fn test_vanderpol_gear32() {
         }
 
         let reference = vanderpol_reference(t_final, &x0, mu);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 150.0,
-            "GEAR32 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 150.0, "GEAR32 tol={} error={}", tol, error);
     }
 }
 
@@ -273,10 +242,7 @@ fn test_vanderpol_gear43() {
     let t_final = mu;
 
     let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![
-            x[1],
-            mu * (1.0 - x[0] * x[0]) * x[1] - x[0],
-        ])
+        DVector::from_vec(vec![x[1], mu * (1.0 - x[0] * x[0]) * x[1] - x[0]])
     };
 
     let tolerances = [1e-6];
@@ -308,15 +274,11 @@ fn test_vanderpol_gear43() {
         }
 
         let reference = vanderpol_reference(t_final, &x0, mu);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 100.0,
-            "GEAR43 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 100.0, "GEAR43 tol={} error={}", tol, error);
     }
 }
 
@@ -327,10 +289,7 @@ fn test_vanderpol_gear54() {
     let t_final = mu;
 
     let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![
-            x[1],
-            mu * (1.0 - x[0] * x[0]) * x[1] - x[0],
-        ])
+        DVector::from_vec(vec![x[1], mu * (1.0 - x[0] * x[0]) * x[1] - x[0]])
     };
 
     let tolerances = [1e-6];
@@ -362,15 +321,11 @@ fn test_vanderpol_gear54() {
         }
 
         let reference = vanderpol_reference(t_final, &x0, mu);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 100.0,
-            "GEAR54 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 100.0, "GEAR54 tol={} error={}", tol, error);
     }
 }
 
@@ -381,10 +336,7 @@ fn test_vanderpol_gear52a() {
     let t_final = mu;
 
     let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![
-            x[1],
-            mu * (1.0 - x[0] * x[0]) * x[1] - x[0],
-        ])
+        DVector::from_vec(vec![x[1], mu * (1.0 - x[0] * x[0]) * x[1] - x[0]])
     };
 
     let tolerances = [1e-6];
@@ -416,14 +368,10 @@ fn test_vanderpol_gear52a() {
         }
 
         let reference = vanderpol_reference(t_final, &x0, mu);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 100.0,
-            "GEAR52A tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 100.0, "GEAR52A tol={} error={}", tol, error);
     }
 }

@@ -78,7 +78,10 @@ fn main() {
     let mut sim = SignalProcessor::new();
     let dt = 0.01;
 
-    println!("{:>10} {:>12} {:>12} {:>12}", "Time", "Output", "Exact", "Error");
+    println!(
+        "{:>10} {:>12} {:>12} {:>12}",
+        "Time", "Output", "Exact", "Error"
+    );
     println!("{:-<10} {:-<12} {:-<12} {:-<12}", "", "", "", "");
 
     // Simulate for one period

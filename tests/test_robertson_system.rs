@@ -44,11 +44,7 @@ fn robertson_reference(t: f64, x0: &[f64; 3]) -> [f64; 3] {
         }
     }
 
-    [
-        solver.state()[0],
-        solver.state()[1],
-        solver.state()[2],
-    ]
+    [solver.state()[0], solver.state()[1], solver.state()[2]]
 }
 
 #[test]
@@ -100,16 +96,12 @@ fn test_robertson_esdirk32() {
         }
 
         let reference = robertson_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
-        assert!(
-            error < tol * 100.0,
-            "ESDIRK32 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 100.0, "ESDIRK32 tol={} error={}", tol, error);
     }
 }
 
@@ -162,16 +154,12 @@ fn test_robertson_esdirk43() {
         }
 
         let reference = robertson_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
-        assert!(
-            error < tol * 100.0,
-            "ESDIRK43 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 100.0, "ESDIRK43 tol={} error={}", tol, error);
     }
 }
 
@@ -224,16 +212,12 @@ fn test_robertson_esdirk54() {
         }
 
         let reference = robertson_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
-        assert!(
-            error < tol * 50.0,
-            "ESDIRK54 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 50.0, "ESDIRK54 tol={} error={}", tol, error);
     }
 }
 
@@ -286,16 +270,12 @@ fn test_robertson_esdirk85() {
         }
 
         let reference = robertson_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
-        assert!(
-            error < tol * 20.0,
-            "ESDIRK85 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 20.0, "ESDIRK85 tol={} error={}", tol, error);
     }
 }
 
@@ -344,16 +324,12 @@ fn test_robertson_gear21() {
         }
 
         let reference = robertson_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
-        assert!(
-            error < tol * 200.0,
-            "GEAR21 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 200.0, "GEAR21 tol={} error={}", tol, error);
     }
 }
 
@@ -402,16 +378,12 @@ fn test_robertson_gear32() {
         }
 
         let reference = robertson_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
-        assert!(
-            error < tol * 150.0,
-            "GEAR32 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 150.0, "GEAR32 tol={} error={}", tol, error);
     }
 }
 
@@ -460,16 +432,12 @@ fn test_robertson_gear43() {
         }
 
         let reference = robertson_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
-        assert!(
-            error < tol * 100.0,
-            "GEAR43 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 100.0, "GEAR43 tol={} error={}", tol, error);
     }
 }
 
@@ -518,16 +486,12 @@ fn test_robertson_gear54() {
         }
 
         let reference = robertson_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
-        assert!(
-            error < tol * 100.0,
-            "GEAR54 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 100.0, "GEAR54 tol={} error={}", tol, error);
     }
 }
 
@@ -576,15 +540,11 @@ fn test_robertson_gear52a() {
         }
 
         let reference = robertson_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
-        assert!(
-            error < tol * 100.0,
-            "GEAR52A tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 100.0, "GEAR52A tol={} error={}", tol, error);
     }
 }

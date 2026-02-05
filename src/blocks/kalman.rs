@@ -79,24 +79,24 @@ pub struct KalmanFilter {
     outputs: Vec<f64>,
 
     // System matrices
-    F: DMatrix<f64>,  // State transition matrix (n x n)
-    H: DMatrix<f64>,  // Measurement matrix (m x n)
-    Q: DMatrix<f64>,  // Process noise covariance (n x n)
-    R: DMatrix<f64>,  // Measurement noise covariance (m x m)
-    B: Option<DMatrix<f64>>,  // Control input matrix (n x p)
+    F: DMatrix<f64>,         // State transition matrix (n x n)
+    H: DMatrix<f64>,         // Measurement matrix (m x n)
+    Q: DMatrix<f64>,         // Process noise covariance (n x n)
+    R: DMatrix<f64>,         // Measurement noise covariance (m x m)
+    B: Option<DMatrix<f64>>, // Control input matrix (n x p)
 
     // State
-    x: DVector<f64>,  // State estimate (n)
-    P: DMatrix<f64>,  // Error covariance (n x n)
+    x: DVector<f64>, // State estimate (n)
+    P: DMatrix<f64>, // Error covariance (n x n)
 
     // Initial conditions
     x0: DVector<f64>,
     P0: DMatrix<f64>,
 
     // Dimensions
-    n: usize,  // State dimension
-    m: usize,  // Measurement dimension
-    p: usize,  // Control input dimension
+    n: usize, // State dimension
+    m: usize, // Measurement dimension
+    p: usize, // Control input dimension
 
     // For buffer/revert
     buffered_x: DVector<f64>,
@@ -119,12 +119,7 @@ impl KalmanFilter {
     /// # Panics
     ///
     /// Panics if matrix dimensions are incompatible.
-    pub fn new(
-        F: DMatrix<f64>,
-        H: DMatrix<f64>,
-        Q: DMatrix<f64>,
-        R: DMatrix<f64>,
-    ) -> Self {
+    pub fn new(F: DMatrix<f64>, H: DMatrix<f64>, Q: DMatrix<f64>, R: DMatrix<f64>) -> Self {
         Self::with_options(F, H, Q, R, None, None, None, None)
     }
 
@@ -264,31 +259,36 @@ impl KalmanFilter {
         // Split inputs into measurements and control
         let z = DVector::from_column_slice(&self.inputs[0..self.m]);
         let u = if self.p > 0 {
-            Some(DVector::from_column_slice(&self.inputs[self.m..self.m + self.p]))
+            Some(DVector::from_column_slice(
+                &self.inputs[self.m..self.m + self.p],
+            ))
         } else {
             None
         };
 
         // Prediction step
-        let x_pred = &self.F * &self.x + if let Some(ref B) = self.B {
-            if let Some(ref u_vec) = u {
-                B * u_vec
+        let x_pred = &self.F * &self.x
+            + if let Some(ref B) = self.B {
+                if let Some(ref u_vec) = u {
+                    B * u_vec
+                } else {
+                    DVector::zeros(self.n)
+                }
             } else {
                 DVector::zeros(self.n)
-            }
-        } else {
-            DVector::zeros(self.n)
-        };
+            };
 
         let P_pred = &self.F * &self.P * self.F.transpose() + &self.Q;
 
         // Update step
-        let y = z - &self.H * &x_pred;  // Innovation
-        let S = &self.H * &P_pred * self.H.transpose() + &self.R;  // Innovation covariance
+        let y = z - &self.H * &x_pred; // Innovation
+        let S = &self.H * &P_pred * self.H.transpose() + &self.R; // Innovation covariance
 
         // Kalman gain: K = P_pred * H^T * S^{-1}
-        let K = &P_pred * self.H.transpose() * S.try_inverse()
-            .expect("Innovation covariance S is singular");
+        let K = &P_pred
+            * self.H.transpose()
+            * S.try_inverse()
+                .expect("Innovation covariance S is singular");
 
         // Update state and covariance
         self.x = x_pred + &K * y;
@@ -302,7 +302,7 @@ impl KalmanFilter {
 }
 
 impl Block for KalmanFilter {
-    const NUM_INPUTS: usize = 0;  // Dynamic
+    const NUM_INPUTS: usize = 0; // Dynamic
     const NUM_OUTPUTS: usize = 0; // Dynamic
     const IS_DYNAMIC: bool = true;
 
@@ -396,9 +396,9 @@ mod tests {
         let kf = KalmanFilter::new(F.clone(), H.clone(), Q.clone(), R.clone());
 
         // Check dimensions
-        assert_eq!(kf.n, 2);  // state dimension
-        assert_eq!(kf.m, 1);  // measurement dimension
-        assert_eq!(kf.p, 0);  // no control input
+        assert_eq!(kf.n, 2); // state dimension
+        assert_eq!(kf.m, 1); // measurement dimension
+        assert_eq!(kf.p, 0); // no control input
 
         // Check default initial conditions
         assert_eq!(kf.x, DVector::zeros(2));
@@ -412,8 +412,8 @@ mod tests {
         assert!(kf.B.is_none());
 
         // Check io dimensions
-        assert_eq!(kf.inputs.len(), 1);  // m measurements
-        assert_eq!(kf.outputs.len(), 2);  // n states
+        assert_eq!(kf.inputs.len(), 1); // m measurements
+        assert_eq!(kf.outputs.len(), 2); // n states
     }
 
     #[test]
@@ -425,9 +425,8 @@ mod tests {
         let x0 = DVector::from_row_slice(&[1.0, 2.0]);
         let P0 = DMatrix::identity(2, 2) * 5.0;
 
-        let kf = KalmanFilter::with_options(
-            F, H, Q, R, None, Some(x0.clone()), Some(P0.clone()), None
-        );
+        let kf =
+            KalmanFilter::with_options(F, H, Q, R, None, Some(x0.clone()), Some(P0.clone()), None);
 
         assert_eq!(kf.x, x0);
         assert_eq!(kf.P, P0);
@@ -446,13 +445,13 @@ mod tests {
         // Check dimensions
         assert_eq!(kf.n, 2);
         assert_eq!(kf.m, 1);
-        assert_eq!(kf.p, 1);  // one control input
+        assert_eq!(kf.p, 1); // one control input
 
         assert_eq!(kf.B, Some(B));
 
         // Check io dimensions (m measurements + p controls)
-        assert_eq!(kf.inputs.len(), 2);  // 1 measurement + 1 control
-        assert_eq!(kf.outputs.len(), 2);  // n states
+        assert_eq!(kf.inputs.len(), 2); // 1 measurement + 1 control
+        assert_eq!(kf.outputs.len(), 2); // n states
     }
 
     #[test]
@@ -480,9 +479,7 @@ mod tests {
         let x0 = DVector::from_row_slice(&[0.0]);
         let P0 = DMatrix::from_row_slice(1, 1, &[10.0]);
 
-        let mut kf = KalmanFilter::with_options(
-            F, H, Q, R, None, Some(x0), Some(P0.clone()), None
-        );
+        let mut kf = KalmanFilter::with_options(F, H, Q, R, None, Some(x0), Some(P0.clone()), None);
 
         // Simulate measurements of true position = 5.0
         let true_position = 5.0;
@@ -517,9 +514,7 @@ mod tests {
         let x0 = DVector::from_row_slice(&[0.0, 0.0]);
         let P0 = DMatrix::identity(2, 2) * 2.0;
 
-        let mut kf = KalmanFilter::with_options(
-            F, H, Q, R, None, Some(x0), Some(P0), None
-        );
+        let mut kf = KalmanFilter::with_options(F, H, Q, R, None, Some(x0), Some(P0), None);
 
         // Simulate system over time
         let num_steps = 50;
@@ -556,9 +551,7 @@ mod tests {
         let x0 = DVector::from_row_slice(&[0.0, 0.0]);
         let P0 = DMatrix::identity(2, 2);
 
-        let mut kf = KalmanFilter::with_options(
-            F, H, Q, R, Some(B), Some(x0), Some(P0), None
-        );
+        let mut kf = KalmanFilter::with_options(F, H, Q, R, Some(B), Some(x0), Some(P0), None);
 
         // Apply constant control input (acceleration = 1.0)
         let control = 1.0;
@@ -576,8 +569,8 @@ mod tests {
             let measurement = position;
 
             // Update filter with measurement and control
-            kf.set_input(0, measurement);  // measurement
-            kf.set_input(1, control);       // control input
+            kf.set_input(0, measurement); // measurement
+            kf.set_input(1, control); // control input
             kf.kf_update();
         }
 
@@ -594,9 +587,7 @@ mod tests {
         let R = DMatrix::from_row_slice(1, 1, &[0.1]);
         let x0 = DVector::from_row_slice(&[1.0, 2.0]);
 
-        let mut kf = KalmanFilter::with_options(
-            F, H, Q, R, None, Some(x0), None, None
-        );
+        let mut kf = KalmanFilter::with_options(F, H, Q, R, None, Some(x0), None, None);
 
         // Set measurement
         kf.set_input(0, 3.0);
@@ -614,37 +605,33 @@ mod tests {
     fn test_multidimensional_measurement() {
         // 4D state: [x, y, vx, vy] - 2D position and velocity
         let dt = 0.1;
-        let F = DMatrix::from_row_slice(4, 4, &[
-            1.0, 0.0, dt, 0.0,
-            0.0, 1.0, 0.0, dt,
-            0.0, 0.0, 1.0, 0.0,
-            0.0, 0.0, 0.0, 1.0,
-        ]);
+        let F = DMatrix::from_row_slice(
+            4,
+            4,
+            &[
+                1.0, 0.0, dt, 0.0, 0.0, 1.0, 0.0, dt, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+            ],
+        );
 
         // Measure both x and y position
-        let H = DMatrix::from_row_slice(2, 4, &[
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-        ]);
+        let H = DMatrix::from_row_slice(2, 4, &[1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
 
         let Q = DMatrix::identity(4, 4) * 0.01;
         let R = DMatrix::identity(2, 2) * 0.1;
         let x0 = DVector::zeros(4);
 
-        let mut kf = KalmanFilter::with_options(
-            F, H, Q, R, None, Some(x0), None, None
-        );
+        let mut kf = KalmanFilter::with_options(F, H, Q, R, None, Some(x0), None, None);
 
         // Check dimensions
-        assert_eq!(kf.n, 4);  // state dimension
-        assert_eq!(kf.m, 2);  // measurement dimension
-        assert_eq!(kf.inputs.len(), 2);   // 2 measurements
-        assert_eq!(kf.outputs.len(), 4);  // 4 states
+        assert_eq!(kf.n, 4); // state dimension
+        assert_eq!(kf.m, 2); // measurement dimension
+        assert_eq!(kf.inputs.len(), 2); // 2 measurements
+        assert_eq!(kf.outputs.len(), 4); // 4 states
 
         // Perform a few updates
         for i in 0..10 {
-            kf.set_input(0, i as f64 * 0.1);  // x measurement
-            kf.set_input(1, i as f64 * 0.2);  // y measurement
+            kf.set_input(0, i as f64 * 0.1); // x measurement
+            kf.set_input(1, i as f64 * 0.2); // y measurement
             kf.kf_update();
         }
 
@@ -662,9 +649,8 @@ mod tests {
         let x0 = DVector::from_row_slice(&[1.0, 2.0]);
         let P0 = DMatrix::identity(2, 2) * 3.0;
 
-        let mut kf = KalmanFilter::with_options(
-            F, H, Q, R, None, Some(x0.clone()), Some(P0.clone()), None
-        );
+        let mut kf =
+            KalmanFilter::with_options(F, H, Q, R, None, Some(x0.clone()), Some(P0.clone()), None);
 
         // Update filter
         kf.set_input(0, 5.0);
@@ -692,7 +678,14 @@ mod tests {
         let x0 = DVector::from_row_slice(&[0.0]);
 
         let mut kf = KalmanFilter::with_options(
-            F, H, Q, R, None, Some(x0), None, None  // dt = None
+            F,
+            H,
+            Q,
+            R,
+            None,
+            Some(x0),
+            None,
+            None, // dt = None
         );
 
         // Set measurement

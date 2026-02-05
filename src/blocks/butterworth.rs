@@ -27,7 +27,7 @@ use std::f64::consts::PI;
 pub struct ButterworthLowpass {
     input: f64,
     output: f64,
-    fc: f64,    // Cutoff frequency in Hz
+    fc: f64, // Cutoff frequency in Hz
     order: usize,
 
     // State for each second-order section (2 states per section)
@@ -106,7 +106,7 @@ impl Block for ButterworthLowpass {
 
             // Direct Form II Transposed
             let y = b0 * x + s1;
-            x = y;  // Output of this section becomes input to next
+            x = y; // Output of this section becomes input to next
         }
 
         self.output = x;
@@ -135,7 +135,7 @@ impl Block for ButterworthLowpass {
             self.states[i * 2] = s1_new;
             self.states[i * 2 + 1] = s2_new;
 
-            x = y;  // Output becomes input for next section
+            x = y; // Output becomes input for next section
         }
 
         self.output = x;
@@ -441,7 +441,11 @@ impl Allpass {
 
         let sos_coeffs = design_allpass_sos(fs, order);
         let num_sections = sos_coeffs.len();
-        let num_states = if num_sections > 0 { num_sections * 2 } else { order };
+        let num_states = if num_sections > 0 {
+            num_sections * 2
+        } else {
+            order
+        };
 
         Self {
             input: 0.0,
@@ -557,7 +561,7 @@ fn design_butterworth_lowpass_sos(fc: f64, n: usize) -> Vec<(f64, f64, f64, f64,
 
     // Prewarp frequency
     let omega_c = 2.0 * PI * fc;
-    let fs = 10000.0;  // Sampling frequency (we'll use bilinear transform)
+    let fs = 10000.0; // Sampling frequency (we'll use bilinear transform)
     let omega_d = 2.0 * fs * ((omega_c / (2.0 * fs)).tan());
 
     // Convert poles to second-order sections using bilinear transform
@@ -614,7 +618,7 @@ fn analog_poles_to_sos(
     filter_type: &str,
 ) -> Vec<(f64, f64, f64, f64, f64)> {
     let mut sos = Vec::new();
-    let k = 2.0 * fs;  // Bilinear transform constant
+    let k = 2.0 * fs; // Bilinear transform constant
 
     let mut i = 0;
     while i < poles.len() {
@@ -639,19 +643,19 @@ fn analog_poles_to_sos(
             let (b0, b1, b2) = match filter_type {
                 "lowpass" => {
                     // Lowpass: numerator is constant (all zeros at z=-1, i.e., s=infinity)
-                    let gain = a_analog_2;  // DC gain normalization
+                    let gain = a_analog_2; // DC gain normalization
                     (gain, 2.0 * gain, gain)
-                },
+                }
                 "highpass" => {
                     // Highpass: zeros at z=1 (s=0), so numerator is (1 - z)^2
                     let gain = k * k;
                     (gain, -2.0 * gain, gain)
-                },
+                }
                 "bandpass" => {
                     // Bandpass: zeros at z=±1
                     let gain = k * a_analog_1.abs();
                     (gain, 0.0, -gain)
-                },
+                }
                 _ => (1.0, 0.0, 0.0),
             };
 
@@ -723,8 +727,11 @@ mod tests {
         }
 
         // Output should approach 1.0
-        assert!((flt.get_output(0) - 1.0).abs() < 0.1,
-                "DC output: {}", flt.get_output(0));
+        assert!(
+            (flt.get_output(0) - 1.0).abs() < 0.1,
+            "DC output: {}",
+            flt.get_output(0)
+        );
     }
 
     #[test]
@@ -768,8 +775,11 @@ mod tests {
             flt.step(0.0, dt);
         }
 
-        assert!(flt.get_output(0).abs() < 0.1,
-                "DC blocking failed: {}", flt.get_output(0));
+        assert!(
+            flt.get_output(0).abs() < 0.1,
+            "DC blocking failed: {}",
+            flt.get_output(0)
+        );
     }
 
     #[test]
@@ -826,7 +836,11 @@ mod tests {
             }
         }
 
-        assert!(max_output > 0.1, "Center frequency gain too low: {}", max_output);
+        assert!(
+            max_output > 0.1,
+            "Center frequency gain too low: {}",
+            max_output
+        );
     }
 
     #[test]
@@ -856,8 +870,11 @@ mod tests {
             }
         }
 
-        assert!((max_output - 1.0).abs() < 0.5,
-                "Allpass magnitude not unity: {}", max_output);
+        assert!(
+            (max_output - 1.0).abs() < 0.5,
+            "Allpass magnitude not unity: {}",
+            max_output
+        );
     }
 
     #[test]

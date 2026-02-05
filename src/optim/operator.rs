@@ -171,12 +171,7 @@ where
 }
 
 /// Compute numerical Jacobian w.r.t. x for dynamic operators
-pub fn numerical_jacobian_x<F>(
-    func: &F,
-    x: &DVector<f64>,
-    u: &DVector<f64>,
-    t: f64,
-) -> DMatrix<f64>
+pub fn numerical_jacobian_x<F>(func: &F, x: &DVector<f64>, u: &DVector<f64>, t: f64) -> DMatrix<f64>
 where
     F: Fn(&DVector<f64>, &DVector<f64>, f64) -> DVector<f64>,
 {
@@ -208,12 +203,7 @@ where
 }
 
 /// Compute numerical Jacobian w.r.t. u for dynamic operators
-pub fn numerical_jacobian_u<F>(
-    func: &F,
-    x: &DVector<f64>,
-    u: &DVector<f64>,
-    t: f64,
-) -> DMatrix<f64>
+pub fn numerical_jacobian_u<F>(func: &F, x: &DVector<f64>, u: &DVector<f64>, t: f64) -> DMatrix<f64>
 where
     F: Fn(&DVector<f64>, &DVector<f64>, f64) -> DVector<f64>,
 {

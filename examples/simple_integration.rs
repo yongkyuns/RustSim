@@ -17,7 +17,7 @@ struct SimpleIntegration {
 impl SimpleIntegration {
     fn new() -> Self {
         Self {
-            source: Constant::new(1.0), // dy/dt = 1
+            source: Constant::new(1.0),       // dy/dt = 1
             integrator: Integrator::new(0.0), // y(0) = 0
             time: 0.0,
         }
@@ -72,7 +72,10 @@ fn main() {
     let mut sim = SimpleIntegration::new();
     let dt = 0.01;
 
-    println!("{:>10} {:>12} {:>12} {:>12}", "Time", "Output", "Exact", "Error");
+    println!(
+        "{:>10} {:>12} {:>12} {:>12}",
+        "Time", "Output", "Exact", "Error"
+    );
     println!("{:-<10} {:-<12} {:-<12} {:-<12}", "", "", "", "");
 
     // Simulate for 5 seconds

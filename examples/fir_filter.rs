@@ -5,7 +5,6 @@
 ///! - Gain
 ///! - Moving average
 ///! - Differentiator
-
 use rustsim::prelude::*;
 
 fn main() {
@@ -27,7 +26,7 @@ fn main() {
 
     // Example 3: Moving average filter
     println!("3. Moving Average Filter [1/3, 1/3, 1/3]");
-    let mut ma = FIR::<3>::new([1.0/3.0, 1.0/3.0, 1.0/3.0], 1.0, 0.0);
+    let mut ma = FIR::<3>::new([1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0], 1.0, 0.0);
 
     let inputs = vec![3.0, 6.0, 9.0, 12.0, 15.0];
     println!("   Inputs: {:?}", inputs);

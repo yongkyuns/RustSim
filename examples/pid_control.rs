@@ -19,10 +19,10 @@ use rustsim::{Adder, Block, Constant, Integrator, PID};
 /// ```
 struct PIDSystem {
     setpoint: Constant,
-    error_calc: Adder<2>,  // setpoint - measurement
+    error_calc: Adder<2>, // setpoint - measurement
     controller: PID,
-    plant: Integrator,     // dx/dt = -x + u
-    plant_gain: Adder<2>,  // -x + u
+    plant: Integrator,    // dx/dt = -x + u
+    plant_gain: Adder<2>, // -x + u
     time: f64,
 }
 
@@ -129,8 +129,14 @@ fn main() {
 
     println!("Initial setpoint: {}", setpoint);
     println!();
-    println!("{:>10} {:>12} {:>12} {:>12} {:>12}", "Time", "Setpoint", "Output", "Error", "Control");
-    println!("{:-<10} {:-<12} {:-<12} {:-<12} {:-<12}", "", "", "", "", "");
+    println!(
+        "{:>10} {:>12} {:>12} {:>12} {:>12}",
+        "Time", "Setpoint", "Output", "Error", "Control"
+    );
+    println!(
+        "{:-<10} {:-<12} {:-<12} {:-<12} {:-<12}",
+        "", "", "", "", ""
+    );
 
     // Simulate step response
     let duration = 5.0;
@@ -152,7 +158,11 @@ fn main() {
 
     println!();
     println!("Step response complete:");
-    println!("  Final output: {:.6} (setpoint: {})", sim.output(), setpoint);
+    println!(
+        "  Final output: {:.6} (setpoint: {})",
+        sim.output(),
+        setpoint
+    );
     println!("  Final error:  {:.6}", sim.error());
     println!();
 
@@ -161,8 +171,14 @@ fn main() {
     println!();
     sim.set_setpoint(2.0);
 
-    println!("{:>10} {:>12} {:>12} {:>12} {:>12}", "Time", "Setpoint", "Output", "Error", "Control");
-    println!("{:-<10} {:-<12} {:-<12} {:-<12} {:-<12}", "", "", "", "", "");
+    println!(
+        "{:>10} {:>12} {:>12} {:>12} {:>12}",
+        "Time", "Setpoint", "Output", "Error", "Control"
+    );
+    println!(
+        "{:-<10} {:-<12} {:-<12} {:-<12} {:-<12}",
+        "", "", "", "", ""
+    );
 
     let duration2 = 5.0;
     let steps2 = (duration2 / dt) as usize;

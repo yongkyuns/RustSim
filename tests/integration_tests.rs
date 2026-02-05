@@ -1,10 +1,10 @@
 //! Integration tests for RustSim
 
 use approx::assert_relative_eq;
-use rustsim::prelude::*;
-use rustsim::blocks::{Amplifier, Adder, Constant, Integrator, Scope};
-use rustsim::solvers::{ExplicitSolver, RK4, Solver};
 use nalgebra::DVector;
+use rustsim::blocks::{Adder, Amplifier, Constant, Integrator, Scope};
+use rustsim::prelude::*;
+use rustsim::solvers::{ExplicitSolver, Solver, RK4};
 
 #[test]
 fn test_amplifier_basic() {
@@ -99,9 +99,7 @@ fn test_rk4_exponential_decay() {
         solver.buffer(dt);
 
         // dx/dt = -k*x
-        let f = |x: &DVector<f64>, _t: f64| {
-            DVector::from_vec(vec![-k * x[0]])
-        };
+        let f = |x: &DVector<f64>, _t: f64| DVector::from_vec(vec![-k * x[0]]);
 
         // RK4 requires 4 stage evaluations
         for _ in 0..4 {
@@ -133,9 +131,7 @@ fn test_rk4_sine_integration() {
         solver.buffer(dt);
 
         // [dx/dt, d²x/dt²] = [v, -x]
-        let f = |state: &DVector<f64>, _t: f64| {
-            DVector::from_vec(vec![state[1], -state[0]])
-        };
+        let f = |state: &DVector<f64>, _t: f64| DVector::from_vec(vec![state[1], -state[0]]);
 
         for _ in 0..4 {
             solver.step(f, dt);

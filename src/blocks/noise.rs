@@ -78,8 +78,12 @@ impl Block for WhiteNoise {
     const NUM_OUTPUTS: usize = 1;
     const IS_DYNAMIC: bool = false;
 
-    fn inputs(&self) -> &[f64] { &[] }
-    fn inputs_mut(&mut self) -> &mut [f64] { &mut [] }
+    fn inputs(&self) -> &[f64] {
+        &[]
+    }
+    fn inputs_mut(&mut self) -> &mut [f64] {
+        &mut []
+    }
 
     fn outputs(&self) -> &[f64] {
         std::slice::from_ref(&self.output)
@@ -172,8 +176,12 @@ impl Block for UniformNoise {
     const NUM_OUTPUTS: usize = 1;
     const IS_DYNAMIC: bool = false;
 
-    fn inputs(&self) -> &[f64] { &[] }
-    fn inputs_mut(&mut self) -> &mut [f64] { &mut [] }
+    fn inputs(&self) -> &[f64] {
+        &[]
+    }
+    fn inputs_mut(&mut self) -> &mut [f64] {
+        &mut []
+    }
 
     fn outputs(&self) -> &[f64] {
         std::slice::from_ref(&self.output)
@@ -281,8 +289,12 @@ impl Block for PinkNoise {
     const NUM_OUTPUTS: usize = 1;
     const IS_DYNAMIC: bool = false;
 
-    fn inputs(&self) -> &[f64] { &[] }
-    fn inputs_mut(&mut self) -> &mut [f64] { &mut [] }
+    fn inputs(&self) -> &[f64] {
+        &[]
+    }
+    fn inputs_mut(&mut self) -> &mut [f64] {
+        &mut []
+    }
 
     fn outputs(&self) -> &[f64] {
         std::slice::from_ref(&self.output)
@@ -360,7 +372,11 @@ mod tests {
         assert!(mean.abs() < 0.05, "Mean = {}, expected ~0", mean);
 
         // Variance should be close to 1
-        assert!((variance - 1.0).abs() < 0.1, "Variance = {}, expected ~1", variance);
+        assert!(
+            (variance - 1.0).abs() < 0.1,
+            "Variance = {}, expected ~1",
+            variance
+        );
     }
 
     #[test]
@@ -452,7 +468,11 @@ mod tests {
             noise.update(0.0);
             let x = noise.get_output(0);
             // With 16 averaging terms, should be well bounded
-            assert!(x.abs() < 5.0, "Pink noise value {} exceeds expected bounds", x);
+            assert!(
+                x.abs() < 5.0,
+                "Pink noise value {} exceeds expected bounds",
+                x
+            );
         }
     }
 

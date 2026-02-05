@@ -38,8 +38,8 @@ fn test_bouncingball_event_detection_rkf21() {
 
     let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
         DVector::from_vec(vec![
-            x[1],      // dy/dt = v
-            -G,        // dv/dt = -g
+            x[1], // dy/dt = v
+            -G,   // dv/dt = -g
         ])
     };
 
@@ -113,9 +113,7 @@ fn test_bouncingball_event_detection_rkbs32() {
     let mut state = DVector::from_vec(vec![h, 0.0]);
     let mut solver = RKBS32::new(state.clone());
 
-    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![x[1], -G])
-    };
+    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> { DVector::from_vec(vec![x[1], -G]) };
 
     let mut t = 0.0;
     let mut dt = 0.001;
@@ -171,9 +169,7 @@ fn test_bouncingball_event_detection_rkf45() {
     let mut state = DVector::from_vec(vec![h, 0.0]);
     let mut solver = RKF45::new(state.clone());
 
-    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![x[1], -G])
-    };
+    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> { DVector::from_vec(vec![x[1], -G]) };
 
     let mut t = 0.0;
     let mut dt = 0.001;
@@ -229,9 +225,7 @@ fn test_bouncingball_event_detection_rkck54() {
     let mut state = DVector::from_vec(vec![h, 0.0]);
     let mut solver = RKCK54::new(state.clone());
 
-    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![x[1], -G])
-    };
+    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> { DVector::from_vec(vec![x[1], -G]) };
 
     let mut t = 0.0;
     let mut dt = 0.001;
@@ -287,9 +281,7 @@ fn test_bouncingball_event_detection_rkdp54() {
     let mut state = DVector::from_vec(vec![h, 0.0]);
     let mut solver = RKDP54::new(state.clone());
 
-    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![x[1], -G])
-    };
+    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> { DVector::from_vec(vec![x[1], -G]) };
 
     let mut t = 0.0;
     let mut dt = 0.001;
@@ -345,9 +337,7 @@ fn test_bouncingball_event_detection_rkv65() {
     let mut state = DVector::from_vec(vec![h, 0.0]);
     let mut solver = RKV65::new(state.clone());
 
-    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![x[1], -G])
-    };
+    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> { DVector::from_vec(vec![x[1], -G]) };
 
     let mut t = 0.0;
     let mut dt = 0.001;
@@ -403,9 +393,7 @@ fn test_bouncingball_event_detection_rkdp87() {
     let mut state = DVector::from_vec(vec![h, 0.0]);
     let mut solver = RKDP87::new(state.clone());
 
-    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![x[1], -G])
-    };
+    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> { DVector::from_vec(vec![x[1], -G]) };
 
     let mut t = 0.0;
     let mut dt = 0.001;
@@ -462,9 +450,7 @@ fn test_bouncingball_energy_decay() {
     let mut state = DVector::from_vec(vec![h, 0.0]);
     let mut solver = RKDP54::new(state.clone());
 
-    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> {
-        DVector::from_vec(vec![x[1], -G])
-    };
+    let f = |x: &DVector<f64>, _t: f64| -> DVector<f64> { DVector::from_vec(vec![x[1], -G]) };
 
     let mut t = 0.0;
     let mut dt = 0.001;

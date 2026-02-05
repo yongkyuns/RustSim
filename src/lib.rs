@@ -39,9 +39,9 @@
 // Core block trait and types
 pub mod block;
 pub mod blocks;
-pub mod solvers;
 pub mod events;
 pub mod optim;
+pub mod solvers;
 pub mod utils;
 
 pub use block::{Block, DynamicBlock, StepResult};

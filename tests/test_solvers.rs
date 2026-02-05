@@ -10,7 +10,7 @@ mod solvers {
     pub use rustsim::solvers::*;
 }
 
-use solvers::{Euler, ExplicitSolver, RK4, RKDP54, Solver, SSPRK22, SSPRK33};
+use solvers::{Euler, ExplicitSolver, Solver, RK4, RKDP54, SSPRK22, SSPRK33};
 
 #[test]
 fn test_all_solvers_exponential_decay() {

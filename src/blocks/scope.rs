@@ -219,7 +219,9 @@ impl<const CHANNELS: usize, const BUFFER_SIZE: usize> Block for Scope<CHANNELS, 
     }
 }
 
-impl<const CHANNELS: usize, const BUFFER_SIZE: usize> DynamicBlock for Scope<CHANNELS, BUFFER_SIZE> {
+impl<const CHANNELS: usize, const BUFFER_SIZE: usize> DynamicBlock
+    for Scope<CHANNELS, BUFFER_SIZE>
+{
     fn state(&self) -> &[f64] {
         // State is the recorded data, but we return outputs for interface compliance
         &self.outputs

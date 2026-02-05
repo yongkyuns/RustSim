@@ -9,7 +9,7 @@
 use approx::assert_relative_eq;
 use nalgebra::DVector;
 use rustsim::solvers::{
-    ExplicitSolver, RK4, RKBS32, RKCK54, RKDP54, RKDP87, RKF21, RKF45, RKF78, RKV65, Solver,
+    ExplicitSolver, Solver, RK4, RKBS32, RKCK54, RKDP54, RKDP87, RKF21, RKF45, RKF78, RKV65,
     SSPRK22, SSPRK33, SSPRK34,
 };
 
@@ -83,9 +83,7 @@ fn get_exact_solution(problem: &Problem, t: f64) -> DVector<f64> {
         "logistic" => DVector::from_vec(vec![1.0 / (1.0 + (-t).exp())]),
         "quadratic" => DVector::from_vec(vec![1.0 / (1.0 - t)]),
         "sin_decay" => DVector::from_vec(vec![(t.cos() - 1.0).exp()]),
-        "polynomial" => {
-            DVector::from_vec(vec![t * t - 2.0 * t + 2.0 - 2.0 * (-t).exp()])
-        }
+        "polynomial" => DVector::from_vec(vec![t * t - 2.0 * t + 2.0 - 2.0 * (-t).exp()]),
         _ => panic!("Unknown problem"),
     }
 }

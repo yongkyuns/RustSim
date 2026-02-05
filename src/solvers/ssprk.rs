@@ -270,7 +270,9 @@ impl ExplicitSolver for SSPRK33 {
             }
             _ => {
                 // Final stage: x_{n+1} = x0 + dt * (k0 + k1 + 4*k2) / 6
-                self.state = x0 + dt * (1.0 / 6.0) * (&self.slopes[0] + &self.slopes[1] + 4.0 * &self.slopes[2]);
+                self.state = x0
+                    + dt * (1.0 / 6.0)
+                        * (&self.slopes[0] + &self.slopes[1] + 4.0 * &self.slopes[2]);
                 self.stage = 0;
             }
         }
@@ -413,7 +415,8 @@ impl ExplicitSolver for SSPRK34 {
             }
             2 => {
                 // Stage 2: x3 = x0 + dt * (1/6 * k0 + 1/6 * k1 + 1/6 * k2)
-                self.state = x0 + dt * (1.0 / 6.0) * (&self.slopes[0] + &self.slopes[1] + &self.slopes[2]);
+                self.state =
+                    x0 + dt * (1.0 / 6.0) * (&self.slopes[0] + &self.slopes[1] + &self.slopes[2]);
                 self.stage = 3;
             }
             _ => {

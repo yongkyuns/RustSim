@@ -367,7 +367,11 @@ fn test_schedule_detect() {
 #[test]
 fn test_schedulelist_init() {
     // Test that creation fails with non-ascending times
-    let result = ScheduleList::new(vec![1.0, 3.0, 5.0, 2.0, 7.0], None::<fn(f64)>, EVT_TOLERANCE);
+    let result = ScheduleList::new(
+        vec![1.0, 3.0, 5.0, 2.0, 7.0],
+        None::<fn(f64)>,
+        EVT_TOLERANCE,
+    );
     assert!(result.is_err());
 
     // Test successful creation with ascending times

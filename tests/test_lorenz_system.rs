@@ -46,11 +46,7 @@ fn lorenz_reference(t: f64, x0: &[f64; 3]) -> [f64; 3] {
         }
     }
 
-    [
-        solver.state()[0],
-        solver.state()[1],
-        solver.state()[2],
-    ]
+    [solver.state()[0], solver.state()[1], solver.state()[2]]
 }
 
 #[test]
@@ -100,7 +96,8 @@ fn test_lorenz_rkf21() {
         }
 
         let reference = lorenz_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
@@ -155,11 +152,17 @@ fn test_lorenz_rkbs32() {
         }
 
         let reference = lorenz_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
-        assert!(error < tol * 5000000.0, "RKBS32 tol={} error={}", tol, error);
+        assert!(
+            error < tol * 5000000.0,
+            "RKBS32 tol={} error={}",
+            tol,
+            error
+        );
     }
 }
 
@@ -209,7 +212,8 @@ fn test_lorenz_rkf45() {
         }
 
         let reference = lorenz_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
@@ -263,11 +267,17 @@ fn test_lorenz_rkck54() {
         }
 
         let reference = lorenz_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
-        assert!(error < tol * 3000000.0, "RKCK54 tol={} error={}", tol, error);
+        assert!(
+            error < tol * 3000000.0,
+            "RKCK54 tol={} error={}",
+            tol,
+            error
+        );
     }
 }
 
@@ -317,11 +327,17 @@ fn test_lorenz_rkdp54() {
         }
 
         let reference = lorenz_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
-        assert!(error < tol * 2000000.0, "RKDP54 tol={} error={}", tol, error);
+        assert!(
+            error < tol * 2000000.0,
+            "RKDP54 tol={} error={}",
+            tol,
+            error
+        );
     }
 }
 
@@ -371,7 +387,8 @@ fn test_lorenz_rkv65() {
         }
 
         let reference = lorenz_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
@@ -425,10 +442,16 @@ fn test_lorenz_rkdp87() {
         }
 
         let reference = lorenz_reference(t_final, &x0);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs())
             .max((solver.state()[2] - reference[2]).abs());
 
-        assert!(error < tol * 1000000.0, "RKDP87 tol={} error={}", tol, error);
+        assert!(
+            error < tol * 1000000.0,
+            "RKDP87 tol={} error={}",
+            tol,
+            error
+        );
     }
 }

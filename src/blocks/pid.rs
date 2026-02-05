@@ -35,7 +35,7 @@ pub struct PID {
     // State
     integral: f64,
     prev_error: f64,
-    dt: f64,  // Stored from step()
+    dt: f64, // Stored from step()
 
     // Initial conditions
     initial_integral: f64,
@@ -133,9 +133,7 @@ impl Block for PID {
         };
 
         // Compute PID output
-        self.output = self.kp * self.input
-                    + self.ki * self.integral
-                    + self.kd * derivative;
+        self.output = self.kp * self.input + self.ki * self.integral + self.kd * derivative;
     }
 
     fn step(&mut self, _t: f64, dt: f64) -> StepResult {
@@ -560,7 +558,7 @@ mod tests {
 
     #[test]
     fn test_pid_integral() {
-        let mut pid = PID::new(0.0, 1.0, 0.0);  // Ki = 1.0
+        let mut pid = PID::new(0.0, 1.0, 0.0); // Ki = 1.0
         let dt = 0.01;
 
         // Constant error of 1.0
@@ -582,7 +580,7 @@ mod tests {
 
     #[test]
     fn test_pid_derivative() {
-        let mut pid = PID::new(0.0, 0.0, 1.0);  // Kd = 1.0
+        let mut pid = PID::new(0.0, 0.0, 1.0); // Kd = 1.0
         let dt = 0.01;
 
         // Step input
@@ -646,7 +644,7 @@ mod tests {
 
     #[test]
     fn test_rate_limiter() {
-        let mut limiter = RateLimiter::new(1.0);  // Max rate 1.0/sec
+        let mut limiter = RateLimiter::new(1.0); // Max rate 1.0/sec
         let dt = 0.1;
 
         // Step input from 0 to 10

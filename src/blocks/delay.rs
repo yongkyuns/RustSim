@@ -54,7 +54,10 @@ impl<const BUFFER_SIZE: usize> Delay<BUFFER_SIZE> {
     /// Panics if delay_time is negative
     pub fn new(delay_time: f64) -> Self {
         assert!(delay_time >= 0.0, "Delay time must be non-negative");
-        assert!(BUFFER_SIZE > 1, "Buffer size must be at least 2 for interpolation");
+        assert!(
+            BUFFER_SIZE > 1,
+            "Buffer size must be at least 2 for interpolation"
+        );
 
         Self {
             input: 0.0,
@@ -255,7 +258,12 @@ mod tests {
         // After 1 second of simulation with constant input 1.0 and 0.5s delay,
         // the output should be 1.0
         delay.update(t);
-        assert!((delay.get_output(0) - 1.0).abs() < 1e-10, "At t={}, output={}", t, delay.get_output(0));
+        assert!(
+            (delay.get_output(0) - 1.0).abs() < 1e-10,
+            "At t={}, output={}",
+            t,
+            delay.get_output(0)
+        );
     }
 
     #[test]

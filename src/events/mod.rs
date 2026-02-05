@@ -4,11 +4,11 @@
 //! and scheduled events for discontinuous dynamics.
 
 mod base;
-mod zerocrossing;
 mod condition;
 mod schedule;
+mod zerocrossing;
 
 pub use base::*;
-pub use zerocrossing::*;
 pub use condition::*;
 pub use schedule::*;
+pub use zerocrossing::*;

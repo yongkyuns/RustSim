@@ -54,11 +54,7 @@ fn test_lut1d_siso_embedding() {
 fn test_lut1d_simo_embedding() {
     // Test 1D SIMO case (multiple outputs)
     let points = vec![0.0, 1.0, 2.0];
-    let values = vec![
-        vec![0.0, 0.0],
-        vec![1.0, 2.0],
-        vec![4.0, 4.0],
-    ]; // [x^2, 2*x]
+    let values = vec![vec![0.0, 0.0], vec![1.0, 2.0], vec![4.0, 4.0]]; // [x^2, 2*x]
 
     let mut lut = LUT1D::new_multi(points, values);
 
@@ -79,11 +75,7 @@ fn test_lut1d_simo_embedding() {
 fn test_lut1d_interpolation() {
     // Test interpolation between points
     let points = vec![0.0, 1.0, 2.0];
-    let values = vec![
-        vec![0.0, 0.0],
-        vec![1.0, 10.0],
-        vec![4.0, 40.0],
-    ]; // [x^2 approx, x*10]
+    let values = vec![vec![0.0, 0.0], vec![1.0, 10.0], vec![4.0, 40.0]]; // [x^2 approx, x*10]
 
     let mut lut = LUT1D::new_multi(points, values);
 
@@ -123,11 +115,7 @@ fn test_lut1d_extrapolation() {
 fn test_lut1d_multiple_outputs() {
     // Test initialization with 1D data and multiple outputs
     let points = vec![0.0, 1.0, 2.0];
-    let values = vec![
-        vec![0.0, 0.0],
-        vec![1.0, 10.0],
-        vec![4.0, 40.0],
-    ]; // [x^2 approx, x*10]
+    let values = vec![vec![0.0, 0.0], vec![1.0, 10.0], vec![4.0, 40.0]]; // [x^2 approx, x*10]
 
     let lut = LUT1D::new_multi(points, values);
 
@@ -159,11 +147,7 @@ fn test_lut1d_update_siso() {
 fn test_lut1d_update_simo() {
     // Test update method for SIMO case
     let points = vec![0.0, 1.0, 2.0];
-    let values = vec![
-        vec![0.0, 0.0],
-        vec![1.0, 10.0],
-        vec![4.0, 40.0],
-    ]; // [x^2 approx, x*10]
+    let values = vec![vec![0.0, 0.0], vec![1.0, 10.0], vec![4.0, 40.0]]; // [x^2 approx, x*10]
 
     let mut lut = LUT1D::new_multi(points, values);
 
@@ -195,11 +179,7 @@ fn test_lut1d_init_single_output() {
 fn test_lut1d_init_multiple_outputs() {
     // Test initialization with 1D data and multiple outputs
     let points = vec![0.0, 1.0, 2.0];
-    let values = vec![
-        vec![0.0, 0.0],
-        vec![1.0, 10.0],
-        vec![4.0, 40.0],
-    ]; // [x^2 approx, x*10]
+    let values = vec![vec![0.0, 0.0], vec![1.0, 10.0], vec![4.0, 40.0]]; // [x^2 approx, x*10]
 
     let lut = LUT1D::new_multi(points, values);
 
@@ -212,11 +192,7 @@ fn test_lut1d_init_multiple_outputs() {
 fn test_lut1d_interpolation_multiple_outputs() {
     // Test 1D interpolation functionality with multiple outputs
     let points = vec![0.0, 1.0, 2.0];
-    let values = vec![
-        vec![0.0, 0.0],
-        vec![1.0, 10.0],
-        vec![4.0, 40.0],
-    ]; // [x^2 approx, x*10]
+    let values = vec![vec![0.0, 0.0], vec![1.0, 10.0], vec![4.0, 40.0]]; // [x^2 approx, x*10]
 
     let mut lut = LUT1D::new_multi(points, values);
 
@@ -237,11 +213,7 @@ fn test_lut1d_interpolation_multiple_outputs() {
 fn test_lut1d_update_functionality_multiple_outputs() {
     // Test the update method directly with multiple outputs
     let points = vec![0.0, 1.0, 2.0];
-    let values = vec![
-        vec![0.0, 0.0],
-        vec![1.0, 10.0],
-        vec![4.0, 40.0],
-    ]; // [x^2 approx, x*10]
+    let values = vec![vec![0.0, 0.0], vec![1.0, 10.0], vec![4.0, 40.0]]; // [x^2 approx, x*10]
 
     let mut lut = LUT1D::new_multi(points, values);
 
@@ -405,10 +377,7 @@ fn test_lut1d_linear_extrapolation_slope() {
 fn test_lut1d_multiple_outputs_extrapolation() {
     // Test that extrapolation works correctly with multiple outputs
     let points = vec![0.0, 1.0];
-    let values = vec![
-        vec![0.0, 0.0],
-        vec![2.0, 4.0],
-    ]; // [2*x, 4*x]
+    let values = vec![vec![0.0, 0.0], vec![2.0, 4.0]]; // [2*x, 4*x]
 
     let mut lut = LUT1D::new_multi(points, values);
 

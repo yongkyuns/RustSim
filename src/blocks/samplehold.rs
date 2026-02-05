@@ -32,8 +32,8 @@ use crate::block::{AlgebraicBlock, Block};
 pub struct SampleHold {
     input: f64,
     output: f64,
-    period: f64,       // T - sampling period
-    delay: f64,        // tau - initial delay
+    period: f64,                   // T - sampling period
+    delay: f64,                    // tau - initial delay
     last_sample_time: Option<f64>, // Track when we last sampled
 }
 

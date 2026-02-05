@@ -1,7 +1,7 @@
 //! Example demonstrating ADC and DAC converters
 
-use rustsim::blocks::{ADC, DAC};
 use rustsim::block::Block;
+use rustsim::blocks::{ADC, DAC};
 
 fn main() {
     println!("=== ADC Example ===");
@@ -13,24 +13,39 @@ fn main() {
     adc.set_input(0, 0.0);
     adc.update(0.0);
     println!("Input: 0.0");
-    println!("Digital code (LSB to MSB): [{}, {}, {}, {}]",
-             adc.get_output(0), adc.get_output(1), adc.get_output(2), adc.get_output(3));
+    println!(
+        "Digital code (LSB to MSB): [{}, {}, {}, {}]",
+        adc.get_output(0),
+        adc.get_output(1),
+        adc.get_output(2),
+        adc.get_output(3)
+    );
     println!("Expected: [0, 0, 0, 1] (code 8)");
 
     // Test maximum value
     adc.set_input(0, 1.0);
     adc.update(1.0);
     println!("\nInput: 1.0");
-    println!("Digital code (LSB to MSB): [{}, {}, {}, {}]",
-             adc.get_output(0), adc.get_output(1), adc.get_output(2), adc.get_output(3));
+    println!(
+        "Digital code (LSB to MSB): [{}, {}, {}, {}]",
+        adc.get_output(0),
+        adc.get_output(1),
+        adc.get_output(2),
+        adc.get_output(3)
+    );
     println!("Expected: [1, 1, 1, 1] (code 15)");
 
     // Test minimum value
     adc.set_input(0, -1.0);
     adc.update(2.0);
     println!("\nInput: -1.0");
-    println!("Digital code (LSB to MSB): [{}, {}, {}, {}]",
-             adc.get_output(0), adc.get_output(1), adc.get_output(2), adc.get_output(3));
+    println!(
+        "Digital code (LSB to MSB): [{}, {}, {}, {}]",
+        adc.get_output(0),
+        adc.get_output(1),
+        adc.get_output(2),
+        adc.get_output(3)
+    );
     println!("Expected: [0, 0, 0, 0] (code 0)");
 
     println!("\n=== DAC Example ===");
@@ -90,6 +105,10 @@ fn main() {
         // Convert back to analog
         dac.update(0.0);
 
-        println!("Original: {:.2}, Reconstructed: {:.4}", val, dac.get_output(0));
+        println!(
+            "Original: {:.2}, Reconstructed: {:.4}",
+            val,
+            dac.get_output(0)
+        );
     }
 }

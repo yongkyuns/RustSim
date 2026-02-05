@@ -4,7 +4,9 @@
 
 use approx::assert_relative_eq;
 use nalgebra::DVector;
-use rustsim::solvers::{compute_bdf_coefficients, ImplicitSolver, Solver, GEAR21, GEAR32, GEAR43, GEAR52A, GEAR54};
+use rustsim::solvers::{
+    compute_bdf_coefficients, ImplicitSolver, Solver, GEAR21, GEAR32, GEAR43, GEAR52A, GEAR54,
+};
 
 // ===========================================================================================
 // REFERENCE PROBLEMS (matching PathSim)

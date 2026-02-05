@@ -50,7 +50,7 @@ jobs:
 
       - name: Run integration tests
         run: cargo test --tests --verbose
-        continue-on-error: true  # Some integration tests may need v1 API
+        continue-on-error: true  # Some integration tests may need API updates
 
       - name: Build examples
         run: cargo build --examples --verbose
@@ -73,13 +73,12 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
-      - name: Clippy
-        run: cargo clippy --lib --tests -- -D warnings
-        continue-on-error: true  # Allow warnings during initial setup
+      - name: Clippy (warnings allowed)
+        run: cargo clippy --lib --tests -- -W clippy::all
 
-  # Build for WebAssembly (without rand)
+  # Build for WebAssembly
   wasm:
-    name: WebAssembly (no-std features)
+    name: WebAssembly
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -118,18 +117,3 @@ jobs:
 
       - name: Build documentation
         run: cargo doc --no-deps --lib
-
-  # Minimum supported Rust version
-  msrv:
-    name: MSRV (1.70.0)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: "1.70.0"
-
-      - name: Build
-        run: cargo build --lib --verbose

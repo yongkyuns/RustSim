@@ -93,15 +93,11 @@ fn test_volterralotka_rkf21() {
         }
 
         let reference = volterralotka_reference(t_final, &x0, alpha, beta, delta, gamma);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 1000.0,
-            "RKF21 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 1000.0, "RKF21 tol={} error={}", tol, error);
     }
 }
 
@@ -151,15 +147,11 @@ fn test_volterralotka_rkbs32() {
         }
 
         let reference = volterralotka_reference(t_final, &x0, alpha, beta, delta, gamma);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 100.0,
-            "RKBS32 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 100.0, "RKBS32 tol={} error={}", tol, error);
     }
 }
 
@@ -209,15 +201,11 @@ fn test_volterralotka_rkf45() {
         }
 
         let reference = volterralotka_reference(t_final, &x0, alpha, beta, delta, gamma);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 500.0,
-            "RKF45 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 500.0, "RKF45 tol={} error={}", tol, error);
     }
 }
 
@@ -267,15 +255,11 @@ fn test_volterralotka_rkck54() {
         }
 
         let reference = volterralotka_reference(t_final, &x0, alpha, beta, delta, gamma);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 50.0,
-            "RKCK54 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 50.0, "RKCK54 tol={} error={}", tol, error);
     }
 }
 
@@ -325,15 +309,11 @@ fn test_volterralotka_rkdp54() {
         }
 
         let reference = volterralotka_reference(t_final, &x0, alpha, beta, delta, gamma);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 500.0,
-            "RKDP54 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 500.0, "RKDP54 tol={} error={}", tol, error);
     }
 }
 
@@ -383,15 +363,11 @@ fn test_volterralotka_rkv65() {
         }
 
         let reference = volterralotka_reference(t_final, &x0, alpha, beta, delta, gamma);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 20.0,
-            "RKV65 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 20.0, "RKV65 tol={} error={}", tol, error);
     }
 }
 
@@ -441,14 +417,10 @@ fn test_volterralotka_rkdp87() {
         }
 
         let reference = volterralotka_reference(t_final, &x0, alpha, beta, delta, gamma);
-        let error = (solver.state()[0] - reference[0]).abs()
+        let error = (solver.state()[0] - reference[0])
+            .abs()
             .max((solver.state()[1] - reference[1]).abs());
 
-        assert!(
-            error < tol * 200.0,
-            "RKDP87 tol={} error={}",
-            tol,
-            error
-        );
+        assert!(error < tol * 200.0, "RKDP87 tol={} error={}", tol, error);
     }
 }

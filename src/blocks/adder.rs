@@ -99,7 +99,8 @@ impl<const N: usize> Block for Adder<N> {
 
     #[inline]
     fn update(&mut self, _t: f64) {
-        self.output = self.inputs
+        self.output = self
+            .inputs
             .iter()
             .zip(self.weights.iter())
             .map(|(&x, &w)| x * w)

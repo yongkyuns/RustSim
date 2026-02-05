@@ -21,12 +21,12 @@ use rustsim::{Adder, Amplifier, Block, Function, Integrator, Pow};
 /// ```
 struct VanDerPol {
     // State integrators
-    x_integrator: Integrator,  // dx/dt = y
-    y_integrator: Integrator,  // dy/dt = μ(1-x²)y - x
+    x_integrator: Integrator, // dx/dt = y
+    y_integrator: Integrator, // dy/dt = μ(1-x²)y - x
 
     // Nonlinear term: μ(1 - x²)y
-    square: Pow,               // x²
-    one_minus_x2: Adder<2>,    // 1 - x²
+    square: Pow,                                           // x²
+    one_minus_x2: Adder<2>,                                // 1 - x²
     damping: Function<2, 1, fn(&[f64; 2], &mut [f64; 1])>, // μ(1-x²)y
 
     // Force term: -x
@@ -80,8 +80,10 @@ impl VanDerPol {
         self.acceleration.inputs_mut()[1] = self.neg_x.get_output(0);
 
         // Connect integrators
-        self.x_integrator.set_input(0, self.y_integrator.get_output(0)); // dx/dt = y
-        self.y_integrator.set_input(0, self.acceleration.get_output(0));  // dy/dt = acceleration
+        self.x_integrator
+            .set_input(0, self.y_integrator.get_output(0)); // dx/dt = y
+        self.y_integrator
+            .set_input(0, self.acceleration.get_output(0)); // dy/dt = acceleration
     }
 
     #[inline]

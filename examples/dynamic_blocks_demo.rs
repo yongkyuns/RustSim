@@ -10,8 +10,8 @@ fn main() {
     println!("   d²x/dt² = -x, x(0)=1, v(0)=0");
 
     let mut ode = ODE::<2, _>::new([1.0, 0.0], |_t, state, _inputs, derivs| {
-        derivs[0] = state[1];      // dx/dt = v
-        derivs[1] = -state[0];     // dv/dt = -x
+        derivs[0] = state[1]; // dx/dt = v
+        derivs[1] = -state[0]; // dv/dt = -x
     });
 
     let dt = 0.01;
@@ -24,7 +24,11 @@ fn main() {
         t += dt;
     }
 
-    println!("   After one period: x={:.6}, v={:.6}", ode.state_value(0), ode.state_value(1));
+    println!(
+        "   After one period: x={:.6}, v={:.6}",
+        ode.state_value(0),
+        ode.state_value(1)
+    );
     println!("   (Should return to x≈1, v≈0)\n");
 
     // 2. Delay Block
@@ -40,7 +44,10 @@ fn main() {
     }
 
     println!("   Step input at t=0.2s, delay=0.5s");
-    println!("   At t=1.0s, output={:.6} (should be ≈1.0)\n", delay.get_output(0));
+    println!(
+        "   At t=1.0s, output={:.6} (should be ≈1.0)\n",
+        delay.get_output(0)
+    );
 
     // 3. Differentiator Block
     println!("3. Differentiator Block");
@@ -80,15 +87,11 @@ fn main() {
     // 5. Complex example: ODE with input
     println!("\n5. ODE with External Input - Driven oscillator");
     let omega = 2.0;
-    let mut driven = ODE::<2, _>::with_inputs(
-        [0.0, 0.0],
-        1,
-        move |_t, state, inputs, derivs| {
-            let forcing = inputs[0];
-            derivs[0] = state[1];
-            derivs[1] = -omega * omega * state[0] + forcing;
-        }
-    );
+    let mut driven = ODE::<2, _>::with_inputs([0.0, 0.0], 1, move |_t, state, inputs, derivs| {
+        let forcing = inputs[0];
+        derivs[0] = state[1];
+        derivs[1] = -omega * omega * state[0] + forcing;
+    });
 
     t = 0.0;
     for i in 0..200 {
@@ -99,7 +102,11 @@ fn main() {
     }
 
     println!("   Oscillator with resonant forcing");
-    println!("   Position={:.6}, Velocity={:.6}", driven.state_value(0), driven.state_value(1));
+    println!(
+        "   Position={:.6}, Velocity={:.6}",
+        driven.state_value(0),
+        driven.state_value(1)
+    );
 
     println!("\n=== All v2 dynamic blocks working! ===");
 }

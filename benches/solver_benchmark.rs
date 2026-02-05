@@ -2,9 +2,9 @@
 //!
 //! Benchmarks numerical integration performance for various solvers.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use nalgebra::DVector;
-use rustsim::solvers::{ExplicitSolver, RK4, Solver};
+use rustsim::solvers::{ExplicitSolver, Solver, RK4};
 
 /// Simple exponential decay: dx/dt = -k*x
 fn exponential_decay(x: &DVector<f64>, _t: f64, k: f64) -> DVector<f64> {
@@ -73,9 +73,7 @@ fn bench_rk4_harmonic_oscillator(c: &mut Criterion) {
                 solver.buffer(dt);
                 for _ in 0..4 {
                     solver.step(
-                        |state, _t| {
-                            DVector::from_vec(vec![state[1], -omega * omega * state[0]])
-                        },
+                        |state, _t| DVector::from_vec(vec![state[1], -omega * omega * state[0]]),
                         black_box(dt),
                     );
                 }

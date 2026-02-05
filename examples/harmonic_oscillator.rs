@@ -113,7 +113,10 @@ fn main() {
     let mut sim = HarmonicOscillator::new(1.0, 0.0);
     let dt = 0.001;
 
-    println!("{:>10} {:>12} {:>12} {:>12}", "Time", "Position", "Exact", "Error");
+    println!(
+        "{:>10} {:>12} {:>12} {:>12}",
+        "Time", "Position", "Exact", "Error"
+    );
     println!("{:-<10} {:-<12} {:-<12} {:-<12}", "", "", "", "");
 
     // Simulate for 2π (one period)

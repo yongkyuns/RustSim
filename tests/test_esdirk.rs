@@ -176,7 +176,12 @@ fn test_esdirk32_convergence() {
         let slope = num / den;
 
         eprintln!("  Convergence order: {:.2} (expected >= 2.0)", slope);
-        assert!(slope > 2.0, "Convergence order {} < 2.0 for {}", slope, problem.name);
+        assert!(
+            slope > 2.0,
+            "Convergence order {} < 2.0 for {}",
+            slope,
+            problem.name
+        );
     }
 }
 
@@ -186,8 +191,8 @@ fn test_esdirk32_adaptive() {
     for problem in get_reference_problems() {
         eprintln!("Testing ESDIRK32 adaptive on: {}", problem.name);
 
-        let mut solver = ESDIRK32::with_tolerances(problem.x0.clone(), 1e-5, 0.0)
-            .with_fpi_tolerance(1e-8);
+        let mut solver =
+            ESDIRK32::with_tolerances(problem.x0.clone(), 1e-5, 0.0).with_fpi_tolerance(1e-8);
 
         let duration = problem.t_span.1 - problem.t_span.0;
         let mut dt = duration / 100.0;
@@ -299,7 +304,12 @@ fn test_esdirk4_convergence() {
         let slope = num / den;
 
         eprintln!("  Convergence order: {:.2} (expected >= 3.0)", slope);
-        assert!(slope > 3.0, "Convergence order {} < 3.0 for {}", slope, problem.name);
+        assert!(
+            slope > 3.0,
+            "Convergence order {} < 3.0 for {}",
+            slope,
+            problem.name
+        );
     }
 }
 
@@ -382,7 +392,12 @@ fn test_esdirk43_convergence() {
         let slope = num / den;
 
         eprintln!("  Convergence order: {:.2} (expected >= 3.0)", slope);
-        assert!(slope > 3.0, "Convergence order {} < 3.0 for {}", slope, problem.name);
+        assert!(
+            slope > 3.0,
+            "Convergence order {} < 3.0 for {}",
+            slope,
+            problem.name
+        );
     }
 }
 
@@ -391,8 +406,8 @@ fn test_esdirk43_adaptive() {
     for problem in get_reference_problems() {
         eprintln!("Testing ESDIRK43 adaptive on: {}", problem.name);
 
-        let mut solver = ESDIRK43::with_tolerances(problem.x0.clone(), 1e-5, 0.0)
-            .with_fpi_tolerance(1e-8);
+        let mut solver =
+            ESDIRK43::with_tolerances(problem.x0.clone(), 1e-5, 0.0).with_fpi_tolerance(1e-8);
 
         let duration = problem.t_span.1 - problem.t_span.0;
         let mut dt = duration / 100.0;
@@ -501,7 +516,12 @@ fn test_esdirk54_convergence() {
         let slope = num / den;
 
         eprintln!("  Convergence order: {:.2} (expected >= 4.0)", slope);
-        assert!(slope > 4.0, "Convergence order {} < 4.0 for {}", slope, problem.name);
+        assert!(
+            slope > 4.0,
+            "Convergence order {} < 4.0 for {}",
+            slope,
+            problem.name
+        );
     }
 }
 
@@ -510,8 +530,8 @@ fn test_esdirk54_adaptive() {
     for problem in get_reference_problems() {
         eprintln!("Testing ESDIRK54 adaptive on: {}", problem.name);
 
-        let mut solver = ESDIRK54::with_tolerances(problem.x0.clone(), 1e-5, 0.0)
-            .with_fpi_tolerance(1e-8);
+        let mut solver =
+            ESDIRK54::with_tolerances(problem.x0.clone(), 1e-5, 0.0).with_fpi_tolerance(1e-8);
 
         let duration = problem.t_span.1 - problem.t_span.0;
         let mut dt = duration / 100.0;
@@ -620,7 +640,12 @@ fn test_esdirk85_convergence() {
         let slope = num / den;
 
         eprintln!("  Convergence order: {:.2} (expected >= 6.0)", slope);
-        assert!(slope > 6.0, "Convergence order {} < 6.0 for {}", slope, problem.name);
+        assert!(
+            slope > 6.0,
+            "Convergence order {} < 6.0 for {}",
+            slope,
+            problem.name
+        );
     }
 }
 
@@ -629,8 +654,8 @@ fn test_esdirk85_adaptive() {
     for problem in get_reference_problems() {
         eprintln!("Testing ESDIRK85 adaptive on: {}", problem.name);
 
-        let mut solver = ESDIRK85::with_tolerances(problem.x0.clone(), 1e-5, 0.0)
-            .with_fpi_tolerance(1e-8);
+        let mut solver =
+            ESDIRK85::with_tolerances(problem.x0.clone(), 1e-5, 0.0).with_fpi_tolerance(1e-8);
 
         let duration = problem.t_span.1 - problem.t_span.0;
         let mut dt = duration / 100.0;
@@ -674,7 +699,11 @@ fn test_esdirk_stage_iterator() {
 
     // Stage should start at 0
     for stage in 0..4 {
-        let _ = solver.solve(|x, _t| -x, None::<fn(&DVector<f64>, f64) -> nalgebra::DMatrix<f64>>, 0.1);
+        let _ = solver.solve(
+            |x, _t| -x,
+            None::<fn(&DVector<f64>, f64) -> nalgebra::DMatrix<f64>>,
+            0.1,
+        );
     }
 }
 
@@ -702,7 +731,11 @@ fn test_esdirk_stiff_problem() {
         solver.buffer(dt);
 
         for _ in 0..6 {
-            let result = solver.solve(func, None::<fn(&DVector<f64>, f64) -> nalgebra::DMatrix<f64>>, dt);
+            let result = solver.solve(
+                func,
+                None::<fn(&DVector<f64>, f64) -> nalgebra::DMatrix<f64>>,
+                dt,
+            );
             // Should converge even on stiff problem
             assert!(result.is_ok(), "Failed to converge on stiff problem");
         }
