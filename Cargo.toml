@@ -1,0 +1,75 @@
+[package]
+name = "rustsim"
+version = "0.1.0"
+edition = "2021"
+authors = ["Yongkyun Shin"]
+description = "Block-based time-domain simulation framework for dynamical systems"
+license = "MIT"
+keywords = ["simulation", "control-systems", "dynamical-systems", "ode-solver"]
+categories = ["simulation", "science"]
+
+[dependencies]
+# Linear algebra and arrays
+nalgebra = "0.33"
+ndarray = "0.16"
+
+# Numeric traits and complex numbers
+num-traits = "0.2"
+num-complex = "0.4"
+simba = "0.9"
+
+# Random number generation
+rand = { version = "0.8", optional = true }
+rand_distr = { version = "0.4", optional = true }
+
+# WASM support
+getrandom = { version = "0.2", features = ["js"], optional = true }
+
+# Collections and utilities
+smallvec = "1.13"
+arrayvec = "0.7"
+slotmap = "1.0"  # Arena allocation for blocks
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Serialization (optional)
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+
+# FFT for spectrum analysis (optional)
+rustfft = { version = "6.2", optional = true }
+
+# CSV export
+csv = "1.3"
+
+[dev-dependencies]
+# Testing
+approx = "0.5"
+proptest = "1.4"
+
+# Benchmarking
+criterion = "0.5"
+
+[features]
+default = ["rand-support"]
+full = ["serialization", "spectrum", "parallel", "rand-support"]
+parallel = ["rayon"]
+serialization = ["dep:serde", "dep:serde_json"]
+spectrum = ["dep:rustfft"]
+rand-support = ["dep:rand", "dep:rand_distr"]
+wasm = ["dep:getrandom", "rand-support"]
+
+[dependencies.rayon]
+version = "1.10"
+optional = true
+
+[[bench]]
+name = "solver_benchmark"
+harness = false
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
