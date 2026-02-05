@@ -76,7 +76,7 @@ jobs:
       - name: Clippy (warnings allowed)
         run: cargo clippy --lib --tests -- -W clippy::all
 
-  # Build for WebAssembly
+  # Build and test for WebAssembly
   wasm:
     name: WebAssembly
     runs-on: ubuntu-latest
@@ -87,6 +87,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -104,6 +107,9 @@ jobs:
 
       - name: Build for WASM (with rand via js)
         run: cargo build --lib --target wasm32-unknown-unknown --features wasm
+
+      - name: Test WASM in Node.js
+        run: wasm-pack test --node --no-default-features
 
   # Documentation
   docs:

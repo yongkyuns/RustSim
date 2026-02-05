@@ -52,6 +52,12 @@ proptest = "1.4"
 # Benchmarking
 criterion = "0.5"
 
+# WASM testing
+wasm-bindgen-test = "0.3"
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "0.3"
+
 [features]
 default = ["rand-support"]
 full = ["serialization", "spectrum", "parallel", "rand-support"]
