@@ -1,0 +1,72 @@
+[package]
+name = "rustsim-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Block-based time-domain simulation framework for dynamical systems"
+keywords = ["simulation", "control-systems", "dynamical-systems", "ode-solver"]
+categories = ["simulation", "science"]
+
+[dependencies]
+# Linear algebra and arrays
+nalgebra = { workspace = true }
+ndarray = { workspace = true }
+
+# Numeric traits and complex numbers
+num-traits = { workspace = true }
+num-complex = { workspace = true }
+simba = { workspace = true }
+
+# Random number generation
+rand = { workspace = true, optional = true }
+rand_distr = { workspace = true, optional = true }
+
+# WASM support
+getrandom = { workspace = true, optional = true }
+
+# Collections and utilities
+smallvec = { workspace = true }
+arrayvec = { workspace = true }
+slotmap = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Serialization (optional)
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+
+# FFT for spectrum analysis (optional)
+rustfft = { workspace = true, optional = true }
+
+# CSV export
+csv = { workspace = true }
+
+[dev-dependencies]
+approx = { workspace = true }
+proptest = { workspace = true }
+criterion = { workspace = true }
+wasm-bindgen-test = "0.3"
+
+[features]
+default = ["rand-support"]
+full = ["serialization", "spectrum", "parallel", "rand-support"]
+parallel = ["rayon"]
+serialization = ["dep:serde", "dep:serde_json"]
+spectrum = ["dep:rustfft"]
+rand-support = ["dep:rand", "dep:rand_distr"]
+wasm = ["dep:getrandom", "rand-support"]
+
+[dependencies.rayon]
+version = "1.10"
+optional = true
+
+[[bench]]
+name = "solver_benchmark"
+harness = false
+
+[[bench]]
+name = "rustsim_benchmark"
+harness = false

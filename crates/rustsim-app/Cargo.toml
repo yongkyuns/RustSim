@@ -1,0 +1,45 @@
+[package]
+name = "rustsim-app"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Visual simulation environment for RustSim using egui"
+
+[dependencies]
+rustsim-core = { workspace = true }
+rustsim-types = { workspace = true }
+rustsim-codegen = { workspace = true }
+rustsim-runtime = { workspace = true }
+
+# GUI
+eframe = { workspace = true }
+egui = { workspace = true }
+egui_plot = { workspace = true }
+egui_extras = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Utilities
+uuid = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Native only
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+futures = { workspace = true }
+env_logger = "0.11"
+
+# WASM only
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+
+[features]
+default = []
+
+[[bin]]
+name = "rustsim"
+path = "src/main.rs"

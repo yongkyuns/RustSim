@@ -1,0 +1,15 @@
+[package]
+name = "rustsim-codegen"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Code generation for RustSim: converts graph models to executable Rust code"
+
+[dependencies]
+rustsim-types = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+[dev-dependencies]
+approx = { workspace = true }
