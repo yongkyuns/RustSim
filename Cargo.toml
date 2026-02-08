@@ -77,6 +77,9 @@ futures = "0.3"
 # Unique IDs
 uuid = { version = "1.0", features = ["v4"] }
 
+# Syntax highlighting
+syntect = { version = "5.2", default-features = false, features = ["default-fancy"] }
+
 # Testing
 approx = "0.5"
 proptest = "1.4"

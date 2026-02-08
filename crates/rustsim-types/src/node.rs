@@ -100,6 +100,24 @@ impl NodeInstance {
             .push(PortInstance::new_output(&self.id, index, name));
     }
 
+    /// Remove the last input port, returns true if removed
+    pub fn remove_input(&mut self) -> bool {
+        if self.inputs.is_empty() {
+            return false;
+        }
+        self.inputs.pop();
+        true
+    }
+
+    /// Remove the last output port, returns true if removed
+    pub fn remove_output(&mut self) -> bool {
+        if self.outputs.is_empty() {
+            return false;
+        }
+        self.outputs.pop();
+        true
+    }
+
     /// Set a parameter value
     pub fn set_param(&mut self, name: &str, value: serde_json::Value) {
         self.params.insert(name.to_string(), value);

@@ -51,8 +51,12 @@ pub fn render_block_palette(ui: &mut Ui, state: &mut AppState) {
                             let response = ui.add(BlockTile::new(name, description, *shape));
 
                             if response.clicked() {
-                                // Add block at center of canvas
-                                let position = Position::new(-pan.x + 400.0, -pan.y + 300.0);
+                                // Add block at center of visible canvas area
+                                // Account for node size to truly center it
+                                let position = Position::new(
+                                    -pan.x - rustsim_types::NODE_BASE_WIDTH / 2.0,
+                                    -pan.y - rustsim_types::NODE_BASE_HEIGHT / 2.0,
+                                );
                                 state.add_node(name, position);
                             }
                         }

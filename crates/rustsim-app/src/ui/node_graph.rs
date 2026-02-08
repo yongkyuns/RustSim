@@ -39,7 +39,7 @@ pub fn render_node_graph(ui: &mut Ui, state: &mut AppState) {
         )
     };
 
-    let to_canvas = |pos: Pos2| -> Position {
+    let _to_canvas = |pos: Pos2| -> Position {
         Position::new(
             (pos.x - canvas_center.x) / state.zoom - state.pan.x,
             (pos.y - canvas_center.y) / state.zoom - state.pan.y,
@@ -84,9 +84,11 @@ pub fn render_node_graph(ui: &mut Ui, state: &mut AppState) {
         }
     }
 
-    // Draw nodes
+    // Draw nodes and collect port hit areas
     let mut clicked_node: Option<String> = None;
     let mut drag_delta = Vec2::ZERO;
+    let mut port_interactions: Vec<PortInteraction> = Vec::new();
+    let mut port_actions: Vec<PortAction> = Vec::new();
 
     for (id, node) in &state.graph.nodes {
         let node_pos = to_screen(node.position);
@@ -111,39 +113,207 @@ pub fn render_node_graph(ui: &mut Ui, state: &mut AppState) {
             node.rotation,
         );
 
-        // Draw ports
+        // Draw and handle ports
+        let port_radius = 6.0 * state.zoom;
         let input_count = node.inputs.len();
         let output_count = node.outputs.len();
 
+        // Input ports
         for i in 0..input_count {
-            let port_pos = to_screen(get_input_port_position(node, i));
-            draw_port(&painter, port_pos, true, false);
+            let port_canvas_pos = get_input_port_position(node, i);
+            let port_pos = to_screen(port_canvas_pos);
+            let port_id = egui::Id::new((id.as_str(), "input", i));
+            let port_rect = Rect::from_center_size(port_pos, Vec2::splat(port_radius * 2.0));
+            let port_response = ui.interact(port_rect, port_id, Sense::click_and_drag());
+
+            let is_hovered = port_response.hovered();
+            draw_port(&painter, port_pos, true, is_hovered);
+
+            port_interactions.push(PortInteraction {
+                node_id: id.clone(),
+                port_index: i,
+                is_output: false,
+                screen_pos: port_pos,
+                canvas_pos: port_canvas_pos,
+                response: port_response,
+            });
         }
 
+        // Output ports
         for i in 0..output_count {
-            let port_pos = to_screen(get_output_port_position(node, i));
-            draw_port(&painter, port_pos, false, false);
+            let port_canvas_pos = get_output_port_position(node, i);
+            let port_pos = to_screen(port_canvas_pos);
+            let port_id = egui::Id::new((id.as_str(), "output", i));
+            let port_rect = Rect::from_center_size(port_pos, Vec2::splat(port_radius * 2.0));
+            let port_response = ui.interact(port_rect, port_id, Sense::click_and_drag());
+
+            let is_hovered = port_response.hovered();
+            draw_port(&painter, port_pos, false, is_hovered);
+
+            port_interactions.push(PortInteraction {
+                node_id: id.clone(),
+                port_index: i,
+                is_output: true,
+                screen_pos: port_pos,
+                canvas_pos: port_canvas_pos,
+                response: port_response,
+            });
         }
 
         // Handle node interaction
         let node_response = ui.interact(node_rect, egui::Id::new(id), Sense::click_and_drag());
 
-        if node_response.clicked() {
-            clicked_node = Some(id.clone());
+        // Start dragging immediately on mouse down - select and prepare to drag
+        if node_response.drag_started() {
+            state.dragging_node = Some(id.clone());
+            // Select this node for dragging (unless Ctrl is held for multi-select)
+            let ctrl = ui.input(|i| i.modifiers.ctrl || i.modifiers.command);
+            if !ctrl && !state.selected_nodes.contains(id) {
+                state.selected_nodes.clear();
+            }
+            state.selected_nodes.insert(id.clone());
         }
 
+        // Apply drag delta while dragging
         if node_response.dragged() && state.dragging_node.as_ref() == Some(id) {
             drag_delta = node_response.drag_delta();
         }
 
-        if node_response.drag_started() {
-            state.dragging_node = Some(id.clone());
-        }
-
+        // On drag stop, clear selection if it was just a click (no movement)
         if node_response.drag_stopped() {
             state.dragging_node = None;
         }
+
+        // Simple click without drag - handle selection toggle
+        if node_response.clicked() {
+            clicked_node = Some(id.clone());
+        }
+
+        // Double-click to open parameter editor
+        if node_response.double_clicked() {
+            state.editing_node = Some(id.clone());
+        }
     }
+
+    // Draw port controls for selected nodes (after all nodes are drawn)
+    let selected_nodes: Vec<String> = state.selected_nodes.iter().cloned().collect();
+    for node_id in &selected_nodes {
+        if let Some(node) = state.graph.get_node(node_id) {
+            let node_pos = to_screen(node.position);
+            let node_size = Vec2::new(NODE_BASE_WIDTH * state.zoom, NODE_BASE_HEIGHT * state.zoom);
+            let node_rect = Rect::from_min_size(node_pos, node_size);
+
+            // Check port capabilities
+            let can_add_input = state.can_add_input(node_id);
+            let can_remove_input = state.can_remove_input(node_id);
+            let can_add_output = state.can_add_output(node_id);
+            let can_remove_output = state.can_remove_output(node_id);
+            let sync_ports = state.has_sync_ports(node_id);
+
+            let btn_size = Vec2::new(16.0 * state.zoom, 16.0 * state.zoom);
+
+            // Input port controls (left side)
+            if can_add_input || can_remove_input {
+                let input_ctrl_center = Pos2::new(
+                    node_rect.left() - 12.0 * state.zoom,
+                    node_rect.center().y,
+                );
+
+                // Plus button
+                let plus_rect = Rect::from_center_size(
+                    Pos2::new(input_ctrl_center.x, input_ctrl_center.y - 10.0 * state.zoom),
+                    btn_size,
+                );
+                let plus_response = ui.interact(
+                    plus_rect,
+                    egui::Id::new((node_id.as_str(), "add_input")),
+                    Sense::click(),
+                );
+
+                if can_add_input {
+                    draw_port_button(&painter, plus_rect, "+", plus_response.hovered());
+                    if plus_response.clicked() {
+                        port_actions.push(PortAction::AddInput(node_id.clone()));
+                    }
+                }
+
+                // Minus button
+                let minus_rect = Rect::from_center_size(
+                    Pos2::new(input_ctrl_center.x, input_ctrl_center.y + 10.0 * state.zoom),
+                    btn_size,
+                );
+                let minus_response = ui.interact(
+                    minus_rect,
+                    egui::Id::new((node_id.as_str(), "remove_input")),
+                    Sense::click(),
+                );
+
+                if can_remove_input {
+                    draw_port_button(&painter, minus_rect, "-", minus_response.hovered());
+                    if minus_response.clicked() {
+                        port_actions.push(PortAction::RemoveInput(node_id.clone()));
+                    }
+                }
+            }
+
+            // Output port controls (right side) - hidden for sync_ports blocks
+            if !sync_ports && (can_add_output || can_remove_output) {
+                let output_ctrl_center = Pos2::new(
+                    node_rect.right() + 12.0 * state.zoom,
+                    node_rect.center().y,
+                );
+
+                // Plus button
+                let plus_rect = Rect::from_center_size(
+                    Pos2::new(output_ctrl_center.x, output_ctrl_center.y - 10.0 * state.zoom),
+                    btn_size,
+                );
+                let plus_response = ui.interact(
+                    plus_rect,
+                    egui::Id::new((node_id.as_str(), "add_output")),
+                    Sense::click(),
+                );
+
+                if can_add_output {
+                    draw_port_button(&painter, plus_rect, "+", plus_response.hovered());
+                    if plus_response.clicked() {
+                        port_actions.push(PortAction::AddOutput(node_id.clone()));
+                    }
+                }
+
+                // Minus button
+                let minus_rect = Rect::from_center_size(
+                    Pos2::new(output_ctrl_center.x, output_ctrl_center.y + 10.0 * state.zoom),
+                    btn_size,
+                );
+                let minus_response = ui.interact(
+                    minus_rect,
+                    egui::Id::new((node_id.as_str(), "remove_output")),
+                    Sense::click(),
+                );
+
+                if can_remove_output {
+                    draw_port_button(&painter, minus_rect, "-", minus_response.hovered());
+                    if minus_response.clicked() {
+                        port_actions.push(PortAction::RemoveOutput(node_id.clone()));
+                    }
+                }
+            }
+        }
+    }
+
+    // Apply port actions
+    for action in port_actions {
+        match action {
+            PortAction::AddInput(id) => { state.add_input_port(&id); }
+            PortAction::RemoveInput(id) => { state.remove_input_port(&id); }
+            PortAction::AddOutput(id) => { state.add_output_port(&id); }
+            PortAction::RemoveOutput(id) => { state.remove_output_port(&id); }
+        }
+    }
+
+    // Handle port interactions for connection creation
+    handle_port_connections(ui, state, &port_interactions, canvas_center);
 
     // Handle node selection
     if let Some(node_id) = clicked_node {
@@ -260,7 +430,7 @@ fn draw_node(
     );
 }
 
-fn draw_port(painter: &egui::Painter, pos: Pos2, is_input: bool, is_hovered: bool) {
+fn draw_port(painter: &egui::Painter, pos: Pos2, _is_input: bool, is_hovered: bool) {
     let radius = 4.0;
     let color = if is_hovered {
         Color32::from_rgb(100, 200, 255)
@@ -270,6 +440,34 @@ fn draw_port(painter: &egui::Painter, pos: Pos2, is_input: bool, is_hovered: boo
 
     // Hollow circle for ports
     painter.circle_stroke(pos, radius, Stroke::new(2.0, color));
+}
+
+fn draw_port_button(painter: &egui::Painter, rect: Rect, label: &str, is_hovered: bool) {
+    let bg_color = if is_hovered {
+        Color32::from_rgb(80, 80, 85)
+    } else {
+        Color32::from_rgb(55, 55, 60)
+    };
+    let text_color = if is_hovered {
+        Color32::from_rgb(100, 200, 255)
+    } else {
+        Color32::from_rgb(180, 180, 180)
+    };
+
+    painter.rect(
+        rect,
+        egui::Rounding::same(3.0),
+        bg_color,
+        Stroke::new(1.0, Color32::from_rgb(80, 80, 80)),
+    );
+
+    painter.text(
+        rect.center(),
+        egui::Align2::CENTER_CENTER,
+        label,
+        egui::FontId::proportional(12.0),
+        text_color,
+    );
 }
 
 fn draw_connection(painter: &egui::Painter, from: Pos2, to: Pos2, color: Color32) {
@@ -320,4 +518,88 @@ fn get_output_port_position(node: &rustsim_types::NodeInstance, port_index: usiz
         node.position.x + NODE_BASE_WIDTH,
         start_y + port_index as f32 * spacing,
     )
+}
+
+/// Port action to apply after rendering
+enum PortAction {
+    AddInput(String),
+    RemoveInput(String),
+    AddOutput(String),
+    RemoveOutput(String),
+}
+
+/// Port interaction data
+struct PortInteraction {
+    node_id: String,
+    port_index: usize,
+    is_output: bool,
+    #[allow(dead_code)]
+    screen_pos: Pos2,
+    canvas_pos: Position,
+    response: egui::Response,
+}
+
+/// Handle port interactions for connection creation
+fn handle_port_connections(
+    ui: &mut Ui,
+    state: &mut AppState,
+    ports: &[PortInteraction],
+    canvas_center: Pos2,
+) {
+    let mouse_pos = ui.input(|i| i.pointer.hover_pos());
+
+    // Check if any output port started a drag (begin connection)
+    for port in ports.iter().filter(|p| p.is_output) {
+        if port.response.drag_started() {
+            state.pending_connection = Some(crate::state::PendingConnection {
+                source_node: port.node_id.clone(),
+                source_port: port.port_index,
+                current_pos: port.canvas_pos,
+            });
+        }
+    }
+
+    // Update pending connection position
+    if let Some(pending) = &mut state.pending_connection {
+        if let Some(mouse) = mouse_pos {
+            // Convert screen position to canvas position
+            let canvas_x = (mouse.x - canvas_center.x) / state.zoom - state.pan.x;
+            let canvas_y = (mouse.y - canvas_center.y) / state.zoom - state.pan.y;
+            pending.current_pos = Position::new(canvas_x, canvas_y);
+        }
+    }
+
+    // Check if pending connection was released over an input port
+    if state.pending_connection.is_some() {
+        let released = ui.input(|i| i.pointer.any_released());
+
+        if released {
+            // Find if we're hovering over an input port
+            let mut target_port: Option<(String, usize)> = None;
+
+            for port in ports.iter().filter(|p| !p.is_output) {
+                if port.response.hovered() {
+                    target_port = Some((port.node_id.clone(), port.port_index));
+                    break;
+                }
+            }
+
+            if let Some((target_node, target_port_idx)) = target_port {
+                if let Some(pending) = state.pending_connection.take() {
+                    // Create the connection (only if not connecting to same node)
+                    if pending.source_node != target_node {
+                        state.add_connection(
+                            &pending.source_node,
+                            pending.source_port,
+                            &target_node,
+                            target_port_idx,
+                        );
+                    }
+                }
+            } else {
+                // Released without target - cancel connection
+                state.pending_connection = None;
+            }
+        }
+    }
 }

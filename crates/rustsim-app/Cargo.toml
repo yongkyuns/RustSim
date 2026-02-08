@@ -27,6 +27,9 @@ uuid = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 
+# Syntax highlighting
+syntect = { workspace = true }
+
 # Native only
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 futures = { workspace = true }
@@ -36,6 +39,9 @@ env_logger = "0.11"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = { workspace = true }
 wasm-bindgen-futures = { workspace = true }
+
+[dev-dependencies]
+egui_kittest = "0.30"
 
 [features]
 default = []
