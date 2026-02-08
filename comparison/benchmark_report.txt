@@ -1,0 +1,37 @@
+RustSim vs PathSim (Python) Benchmark Report
+Generated: 2026-02-05 07:38:03
+===========================================
+
+Test: Harmonic Oscillator Simulation
+  - System: d²x/dt² = -x
+  - Initial conditions: x(0) = 1.0, v(0) = 0.0
+  - Duration: 2π seconds (one period)
+  - Time step: 0.001 seconds
+  - Total steps: ~6283
+
+Rust Results:
+-------------
+Harmonic Oscillator - Rust Benchmark
+==================================================
+
+System: d²x/dt² = -x
+Initial: x(0) = 1, v(0) = 0
+Duration: 6.283185 seconds
+Time step: 0.001
+Total steps: 6283
+
+Results:
+--------------------------------------------------
+  Execution time: 0.000122 seconds
+  Steps per second: 51590322
+
+Final state (t = 6.284000):
+  Position: 1.006303 (exact: 1.000000)
+  Velocity: -0.000811 (exact: -0.000815)
+  Position error: 6.30e-3
+  Velocity error: 4.09e-6
+  Energy: 0.506323 (should be 0.5)
+  Energy error: 6.32e-3
+
+Results written to /tmp/rust_benchmark_results.json
+

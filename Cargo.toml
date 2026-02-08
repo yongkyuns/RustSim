@@ -75,6 +75,14 @@ optional = true
 name = "solver_benchmark"
 harness = false
 
+[[bench]]
+name = "rustsim_benchmark"
+harness = false
+
+[[bin]]
+name = "harmonic_oscillator_rust"
+path = "comparison/harmonic_oscillator_rust.rs"
+
 [profile.release]
 lto = true
 codegen-units = 1

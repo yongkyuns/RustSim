@@ -23,11 +23,17 @@ mod converters;
 mod counter;
 mod kalman;
 mod samplehold;
+#[cfg(feature = "spectrum")]
+mod spectrum;
 mod table;
+mod transfer_function;
+mod zpk;
 
 pub use adder::Adder;
 pub use amplifier::Amplifier;
-pub use butterworth::{Allpass, ButterworthBandpass, ButterworthHighpass, ButterworthLowpass};
+pub use butterworth::{
+    Allpass, ButterworthBandpass, ButterworthBandstop, ButterworthHighpass, ButterworthLowpass,
+};
 pub use delay::Delay;
 pub use differentiator::Differentiator;
 pub use filters::{HighpassRC, LowpassRC};
@@ -50,4 +56,8 @@ pub use converters::{ADC, DAC};
 pub use counter::{Counter, CounterDown, CounterUp};
 pub use kalman::KalmanFilter;
 pub use samplehold::SampleHold;
+#[cfg(feature = "spectrum")]
+pub use spectrum::Spectrum;
 pub use table::{LUT, LUT1D};
+pub use transfer_function::TransferFunction;
+pub use zpk::ZerosPoleGain;

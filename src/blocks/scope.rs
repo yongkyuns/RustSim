@@ -1,8 +1,12 @@
 //! Data recorder (scope) block
+//!
+//! Provides multi-channel data recording with CSV export functionality,
+//! matching PathSim's Scope.save() behavior.
 
 use crate::block::{Block, DynamicBlock, StepResult};
+use std::io::{self, Write};
 
-/// Scope: multi-channel data recorder
+/// Scope: multi-channel data recorder with CSV export
 ///
 /// Records input signals into a fixed-size ring buffer. Once the buffer
 /// is full, oldest samples are overwritten.
@@ -28,6 +32,10 @@ use crate::block::{Block, DynamicBlock, StepResult};
 /// for (time, values) in data {
 ///     println!("t={}, x={}, y={}", time, values[0], values[1]);
 /// }
+///
+/// // Export to CSV
+/// scope.save("output.csv")?; // Default labels: "port 0", "port 1"
+/// scope.save_with_labels("output.csv", &["position", "velocity"])?;
 /// ```
 #[derive(Debug, Clone)]
 pub struct Scope<const CHANNELS: usize, const BUFFER_SIZE: usize> {
@@ -148,6 +156,151 @@ impl<const CHANNELS: usize, const BUFFER_SIZE: usize> Scope<CHANNELS, BUFFER_SIZ
         if self.count < BUFFER_SIZE {
             self.count += 1;
         }
+    }
+
+    /// Save recorded data to CSV file with default labels
+    ///
+    /// Creates a CSV file with time column and channel columns.
+    /// Channel labels default to "port 0", "port 1", etc.
+    ///
+    /// # CSV Format
+    ///
+    /// ```csv
+    /// time [s],port 0,port 1,...
+    /// 0.0,1.0,2.0,...
+    /// 0.01,1.1,2.1,...
+    /// ```
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let mut scope = Scope::<2, 1000>::new();
+    /// // ... run simulation ...
+    /// scope.save("output.csv")?;
+    /// ```
+    pub fn save(&self, filename: &str) -> io::Result<()> {
+        // Generate default labels
+        let labels: Vec<String> = (0..CHANNELS)
+            .map(|i| format!("port {}", i))
+            .collect();
+        let label_refs: Vec<&str> = labels.iter().map(|s| s.as_str()).collect();
+
+        self.save_with_labels(filename, &label_refs)
+    }
+
+    /// Save recorded data to CSV file with custom channel labels
+    ///
+    /// Creates a CSV file with time column and labeled channel columns.
+    ///
+    /// # CSV Format
+    ///
+    /// ```csv
+    /// time [s],position,velocity,...
+    /// 0.0,1.0,0.0,...
+    /// 0.01,0.99,0.1,...
+    /// ```
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let mut scope = Scope::<2, 1000>::new();
+    /// // ... run simulation ...
+    /// scope.save_with_labels("output.csv", &["position", "velocity"])?;
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The file cannot be created or written
+    /// - The number of labels doesn't match the number of channels
+    pub fn save_with_labels(&self, filename: &str, labels: &[&str]) -> io::Result<()> {
+        // Ensure labels match channel count
+        if labels.len() != CHANNELS {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!(
+                    "Number of labels ({}) must match number of channels ({})",
+                    labels.len(),
+                    CHANNELS
+                ),
+            ));
+        }
+
+        // Add .csv extension if not present
+        let filename = if filename.to_lowercase().ends_with(".csv") {
+            filename.to_string()
+        } else {
+            format!("{}.csv", filename)
+        };
+
+        // Create CSV writer
+        let file = std::fs::File::create(&filename)?;
+        let mut wtr = csv::Writer::from_writer(file);
+
+        // Write header row
+        let mut header = vec!["time [s]".to_string()];
+        header.extend(labels.iter().map(|&s| s.to_string()));
+        wtr.write_record(&header)?;
+
+        // Get data in chronological order
+        let data = self.data();
+
+        // Write each sample
+        for (time, values) in data {
+            let mut record = vec![time.to_string()];
+            record.extend(values.iter().map(|v| v.to_string()));
+            wtr.write_record(&record)?;
+        }
+
+        wtr.flush()?;
+        Ok(())
+    }
+
+    /// Save recorded data to a writer with custom labels
+    ///
+    /// This is useful for testing or when you want to write to something
+    /// other than a file (e.g., a string buffer).
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let mut buffer = Vec::new();
+    /// scope.save_to_writer(&mut buffer, &["x", "y"])?;
+    /// let csv_string = String::from_utf8(buffer)?;
+    /// ```
+    pub fn save_to_writer<W: Write>(&self, writer: W, labels: &[&str]) -> io::Result<()> {
+        // Ensure labels match channel count
+        if labels.len() != CHANNELS {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!(
+                    "Number of labels ({}) must match number of channels ({})",
+                    labels.len(),
+                    CHANNELS
+                ),
+            ));
+        }
+
+        // Create CSV writer
+        let mut wtr = csv::Writer::from_writer(writer);
+
+        // Write header row
+        let mut header = vec!["time [s]".to_string()];
+        header.extend(labels.iter().map(|&s| s.to_string()));
+        wtr.write_record(&header)?;
+
+        // Get data in chronological order
+        let data = self.data();
+
+        // Write each sample
+        for (time, values) in data {
+            let mut record = vec![time.to_string()];
+            record.extend(values.iter().map(|v| v.to_string()));
+            wtr.write_record(&record)?;
+        }
+
+        wtr.flush()?;
+        Ok(())
     }
 }
 
