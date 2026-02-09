@@ -12,6 +12,7 @@ mod graph;
 mod node;
 mod port;
 mod settings;
+mod simstate;
 
 pub use block::*;
 pub use connection::*;
@@ -19,6 +20,7 @@ pub use graph::*;
 pub use node::*;
 pub use port::*;
 pub use settings::*;
+pub use simstate::*;
 
 /// Grid size for snapping positions (in pixels)
 pub const GRID_SIZE: f32 = 10.0;

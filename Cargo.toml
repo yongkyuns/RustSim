@@ -80,11 +80,25 @@ uuid = { version = "1.0", features = ["v4"] }
 # Syntax highlighting
 syntect = { version = "5.2", default-features = false, features = ["default-fancy"] }
 
+# Graph layout
+layout-rs = "0.1"
+
+# File dialogs
+rfd = "0.15"
+
 # Testing
 approx = "0.5"
 proptest = "1.4"
 criterion = "0.5"
 
+# Fast release for development (use: cargo run --profile release-dev)
+[profile.release-dev]
+inherits = "release"
+lto = false
+codegen-units = 16
+incremental = true
+
+# Maximum optimization for distribution
 [profile.release]
 lto = true
 codegen-units = 1

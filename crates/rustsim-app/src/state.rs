@@ -1,11 +1,32 @@
 //! Application state management.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::time::{Duration, Instant};
 
+use rustsim_core::block::Block;
+use rustsim_core::block_kind::BlockKind;
+use rustsim_core::blocks::*;
 use rustsim_types::{
     BlockCategory, BlockTypeDefinition, Connection, NodeInstance, ParamDefinition, PortConfig,
     PortDefinition, Position, SimulationGraph, SimulationSettings,
 };
+
+use crate::examples;
+use crate::layout;
+use crate::ui::PlotSettings;
+
+#[cfg(not(target_arch = "wasm32"))]
+use crate::compiler::CompiledSimulation;
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::mpsc::{self, Receiver};
+
+/// Simulation result snapshot for ghost traces
+#[derive(Clone)]
+pub struct SimulationResult {
+    pub plot_data: Vec<(f64, Vec<f64>)>,
+    pub plot_labels: Vec<String>,
+}
 
 /// Application state
 pub struct AppState {
@@ -30,6 +51,9 @@ pub struct AppState {
     /// Canvas zoom level
     pub zoom: f32,
 
+    /// Whether to show grid on canvas
+    pub show_canvas_grid: bool,
+
     /// Simulation running state
     running: bool,
 
@@ -38,6 +62,21 @@ pub struct AppState {
 
     /// Recorded plot data: (time, outputs)
     pub plot_data: Vec<(f64, Vec<f64>)>,
+
+    /// Plot signal labels
+    pub plot_labels: Vec<String>,
+
+    /// Per-node plot data for Scope nodes: node_id -> Vec<(time, values)>
+    pub scope_data: HashMap<String, Vec<(f64, Vec<f64>)>>,
+
+    /// Per-node spectrum data for Spectrum nodes: node_id -> Vec<(freq, magnitude)>
+    pub spectrum_data: HashMap<String, Vec<(f64, Vec<f64>)>>,
+
+    /// Plot visualization settings
+    pub plot_settings: PlotSettings,
+
+    /// Result history for ghost traces (max 6)
+    pub result_history: VecDeque<SimulationResult>,
 
     /// Undo stack
     undo_stack: Vec<UndoState>,
@@ -54,14 +93,61 @@ pub struct AppState {
     /// Connection being created
     pub pending_connection: Option<PendingConnection>,
 
-    /// Integrator states for simulation
-    integrator_states: HashMap<String, f64>,
+    /// Block instances for interpreter mode (keyed by node_id)
+    blocks: HashMap<String, BlockKind>,
+
+    /// Execution order for interpreter (cached topological sort)
+    execution_order: Vec<String>,
 
     /// Node being edited (double-clicked)
     pub editing_node: Option<String>,
 
-    /// Whether to generate C ABI exports in code viewer
-    pub generate_c_abi: bool,
+    /// Whether to use compiled mode instead of interpreter
+    pub use_compiled_mode: bool,
+
+    /// Compiled simulation instance (only on native platforms)
+    #[cfg(not(target_arch = "wasm32"))]
+    compiled_sim: Option<CompiledSimulation>,
+
+    /// Compilation status message
+    pub compilation_status: CompilationStatus,
+
+    /// Compilation log messages
+    pub compilation_log: Vec<String>,
+
+    /// Receiver for compilation messages (from background thread)
+    #[cfg(not(target_arch = "wasm32"))]
+    compilation_receiver: Option<Receiver<CompilationMessage>>,
+
+    /// Total time spent in step_simulation calls
+    total_step_time: Duration,
+
+    /// Number of steps executed
+    step_count: u64,
+}
+
+/// Status of compilation
+#[derive(Clone, Debug, PartialEq)]
+pub enum CompilationStatus {
+    /// Not compiled yet
+    NotCompiled,
+    /// Currently compiling
+    Compiling,
+    /// Compilation succeeded
+    Ready,
+    /// Compilation failed with error message
+    Error(String),
+}
+
+/// Message from compilation thread
+#[cfg(not(target_arch = "wasm32"))]
+pub enum CompilationMessage {
+    /// Log message
+    Log(String),
+    /// Compilation completed successfully
+    Success(CompiledSimulation),
+    /// Compilation failed
+    Error(String),
 }
 
 /// State snapshot for undo/redo
@@ -81,25 +167,83 @@ pub struct PendingConnection {
 impl AppState {
     pub fn new() -> Self {
         Self {
-            graph: SimulationGraph::new(),
+            // Load PID Controller as default example
+            graph: examples::pid_controller(),
             settings: SimulationSettings::default(),
             block_types: Self::create_block_types(),
             selected_nodes: HashSet::new(),
             selected_connections: HashSet::new(),
             pan: Position::zero(),
             zoom: 1.0,
+            show_canvas_grid: true,
             running: false,
             sim_time: 0.0,
             plot_data: Vec::new(),
+            plot_labels: Vec::new(),
+            scope_data: HashMap::new(),
+            spectrum_data: HashMap::new(),
+            plot_settings: PlotSettings::default(),
+            result_history: VecDeque::new(),
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
             id_counter: 0,
             dragging_node: None,
             pending_connection: None,
-            integrator_states: HashMap::new(),
+            blocks: HashMap::new(),
+            execution_order: Vec::new(),
             editing_node: None,
-            generate_c_abi: false,
+            use_compiled_mode: false,
+            #[cfg(not(target_arch = "wasm32"))]
+            compiled_sim: None,
+            compilation_status: CompilationStatus::NotCompiled,
+            compilation_log: Vec::new(),
+            #[cfg(not(target_arch = "wasm32"))]
+            compilation_receiver: None,
+            total_step_time: Duration::ZERO,
+            step_count: 0,
         }
+    }
+
+    /// Load an example simulation by name
+    pub fn load_example(&mut self, name: &str) {
+        if let Some(graph) = examples::load_example(name) {
+            // Stop any running simulation
+            self.running = false;
+
+            // Reset state
+            self.graph = graph;
+            self.sim_time = 0.0;
+            self.plot_data.clear();
+            self.plot_labels.clear();
+            self.scope_data.clear();
+            self.spectrum_data.clear();
+            self.blocks.clear();
+            self.execution_order.clear();
+            self.selected_nodes.clear();
+            self.selected_connections.clear();
+            self.result_history.clear();
+            self.undo_stack.clear();
+            self.redo_stack.clear();
+
+            // Reset compilation state
+            self.use_compiled_mode = false;
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                self.compiled_sim = None;
+            }
+            self.compilation_status = CompilationStatus::NotCompiled;
+            self.compilation_log.clear();
+        }
+    }
+
+    /// Get list of available examples
+    pub fn available_examples() -> Vec<(&'static str, &'static str)> {
+        examples::list_examples()
+    }
+
+    /// Auto-arrange blocks using layered layout algorithm
+    pub fn auto_layout(&mut self) {
+        layout::auto_layout(&mut self.graph);
     }
 
     /// Generate a unique ID
@@ -166,17 +310,24 @@ impl AppState {
                     sync_ports: false,
                 }),
             // Dynamic blocks
-            BlockTypeDefinition::new("Integrator", "Integrates input signal", BlockCategory::Dynamic)
-                .with_param("initial_value", ParamDefinition::number("Initial value", 0.0))
-                .with_ports(PortConfig {
-                    inputs: vec![PortDefinition::input("in")],
-                    outputs: vec![PortDefinition::output("out")],
-                    min_inputs: 1,
-                    min_outputs: 1,
-                    max_inputs: None,
-                    max_outputs: None,
-                    sync_ports: true,
-                }),
+            BlockTypeDefinition::new(
+                "Integrator",
+                "Integrates input signal",
+                BlockCategory::Dynamic,
+            )
+            .with_param(
+                "initial_value",
+                ParamDefinition::number("Initial value", 0.0),
+            )
+            .with_ports(PortConfig {
+                inputs: vec![PortDefinition::input("in")],
+                outputs: vec![PortDefinition::output("out")],
+                min_inputs: 1,
+                min_outputs: 1,
+                max_inputs: None,
+                max_outputs: None,
+                sync_ports: true,
+            }),
             BlockTypeDefinition::new(
                 "Differentiator",
                 "Differentiates input signal",
@@ -218,10 +369,7 @@ impl AppState {
             // Algebraic blocks
             BlockTypeDefinition::new("Adder", "Adds input signals", BlockCategory::Algebraic)
                 .with_ports(PortConfig {
-                    inputs: vec![
-                        PortDefinition::input("in 0"),
-                        PortDefinition::input("in 1"),
-                    ],
+                    inputs: vec![PortDefinition::input("in 0"), PortDefinition::input("in 1")],
                     outputs: vec![PortDefinition::output("out")],
                     min_inputs: 2,
                     min_outputs: 1,
@@ -235,10 +383,7 @@ impl AppState {
                 BlockCategory::Algebraic,
             )
             .with_ports(PortConfig {
-                inputs: vec![
-                    PortDefinition::input("in 0"),
-                    PortDefinition::input("in 1"),
-                ],
+                inputs: vec![PortDefinition::input("in 0"), PortDefinition::input("in 1")],
                 outputs: vec![PortDefinition::output("out")],
                 min_inputs: 2,
                 min_outputs: 1,
@@ -246,19 +391,23 @@ impl AppState {
                 max_outputs: Some(1),
                 sync_ports: false,
             }),
-            BlockTypeDefinition::new("Amplifier", "Amplifies signal by gain", BlockCategory::Algebraic)
-                .with_param("gain", ParamDefinition::number("Gain", 1.0))
-                .with_ports(PortConfig {
-                    inputs: vec![PortDefinition::input("in")],
-                    outputs: vec![PortDefinition::output("out")],
-                    min_inputs: 1,
-                    min_outputs: 1,
-                    max_inputs: None,
-                    max_outputs: None,
-                    sync_ports: true,
-                }),
-            BlockTypeDefinition::new("Sin", "Sine function", BlockCategory::Algebraic)
-                .with_ports(PortConfig {
+            BlockTypeDefinition::new(
+                "Amplifier",
+                "Amplifies signal by gain",
+                BlockCategory::Algebraic,
+            )
+            .with_param("gain", ParamDefinition::number("Gain", 1.0))
+            .with_ports(PortConfig {
+                inputs: vec![PortDefinition::input("in")],
+                outputs: vec![PortDefinition::output("out")],
+                min_inputs: 1,
+                min_outputs: 1,
+                max_inputs: None,
+                max_outputs: None,
+                sync_ports: true,
+            }),
+            BlockTypeDefinition::new("Sin", "Sine function", BlockCategory::Algebraic).with_ports(
+                PortConfig {
                     inputs: vec![PortDefinition::input("in")],
                     outputs: vec![PortDefinition::output("out")],
                     min_inputs: 1,
@@ -266,7 +415,8 @@ impl AppState {
                     max_inputs: Some(1),
                     max_outputs: Some(1),
                     sync_ports: false,
-                }),
+                },
+            ),
             BlockTypeDefinition::new("Cos", "Cosine function", BlockCategory::Algebraic)
                 .with_ports(PortConfig {
                     inputs: vec![PortDefinition::input("in")],
@@ -277,8 +427,8 @@ impl AppState {
                     max_outputs: Some(1),
                     sync_ports: false,
                 }),
-            BlockTypeDefinition::new("Abs", "Absolute value", BlockCategory::Algebraic)
-                .with_ports(PortConfig {
+            BlockTypeDefinition::new("Abs", "Absolute value", BlockCategory::Algebraic).with_ports(
+                PortConfig {
                     inputs: vec![PortDefinition::input("in")],
                     outputs: vec![PortDefinition::output("out")],
                     min_inputs: 1,
@@ -286,9 +436,10 @@ impl AppState {
                     max_inputs: Some(1),
                     max_outputs: Some(1),
                     sync_ports: false,
-                }),
-            BlockTypeDefinition::new("Sqrt", "Square root", BlockCategory::Algebraic)
-                .with_ports(PortConfig {
+                },
+            ),
+            BlockTypeDefinition::new("Sqrt", "Square root", BlockCategory::Algebraic).with_ports(
+                PortConfig {
                     inputs: vec![PortDefinition::input("in")],
                     outputs: vec![PortDefinition::output("out")],
                     min_inputs: 1,
@@ -296,11 +447,15 @@ impl AppState {
                     max_inputs: Some(1),
                     max_outputs: Some(1),
                     sync_ports: false,
-                }),
+                },
+            ),
             // Mixed blocks
             BlockTypeDefinition::new("SampleHold", "Sample and hold", BlockCategory::Mixed)
                 .with_ports(PortConfig {
-                    inputs: vec![PortDefinition::input("in"), PortDefinition::input("trigger")],
+                    inputs: vec![
+                        PortDefinition::input("in"),
+                        PortDefinition::input("trigger"),
+                    ],
                     outputs: vec![PortDefinition::output("out")],
                     min_inputs: 2,
                     min_outputs: 1,
@@ -308,8 +463,8 @@ impl AppState {
                     max_outputs: Some(1),
                     sync_ports: false,
                 }),
-            BlockTypeDefinition::new("Counter", "Event counter", BlockCategory::Mixed)
-                .with_ports(PortConfig {
+            BlockTypeDefinition::new("Counter", "Event counter", BlockCategory::Mixed).with_ports(
+                PortConfig {
                     inputs: vec![PortDefinition::input("trigger")],
                     outputs: vec![PortDefinition::output("count")],
                     min_inputs: 1,
@@ -317,18 +472,23 @@ impl AppState {
                     max_inputs: Some(1),
                     max_outputs: Some(1),
                     sync_ports: false,
-                }),
+                },
+            ),
             // Recording blocks
-            BlockTypeDefinition::new("Scope", "Records time-domain signals", BlockCategory::Recording)
-                .with_ports(PortConfig {
-                    inputs: vec![PortDefinition::input("in 0")],
-                    outputs: vec![],
-                    min_inputs: 1,
-                    min_outputs: 0,
-                    max_inputs: None,
-                    max_outputs: Some(0),
-                    sync_ports: false,
-                }),
+            BlockTypeDefinition::new(
+                "Scope",
+                "Records time-domain signals",
+                BlockCategory::Recording,
+            )
+            .with_ports(PortConfig {
+                inputs: vec![PortDefinition::input("in 0")],
+                outputs: vec![],
+                min_inputs: 1,
+                min_outputs: 0,
+                max_inputs: None,
+                max_outputs: Some(0),
+                sync_ports: false,
+            }),
             BlockTypeDefinition::new("Spectrum", "Frequency analysis", BlockCategory::Recording)
                 .with_ports(PortConfig {
                     inputs: vec![PortDefinition::input("in")],
@@ -347,9 +507,21 @@ impl AppState {
         self.block_types.iter().find(|b| b.name == name)
     }
 
+    /// Invalidate compiled simulation when graph changes
+    fn invalidate_compiled_sim(&mut self) {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.compiled_sim = None;
+        }
+        if self.compilation_status != CompilationStatus::NotCompiled {
+            self.compilation_status = CompilationStatus::NotCompiled;
+        }
+    }
+
     /// Add a node to the graph
     pub fn add_node(&mut self, block_type: &str, position: Position) -> String {
         self.save_undo_state();
+        self.invalidate_compiled_sim();
 
         let id = self.generate_id();
         let mut node = NodeInstance::new(id.clone(), block_type.to_string(), position);
@@ -386,6 +558,7 @@ impl AppState {
         target_port: usize,
     ) -> String {
         self.save_undo_state();
+        self.invalidate_compiled_sim();
 
         let id = format!("conn-{}", self.id_counter);
         self.id_counter += 1;
@@ -409,6 +582,7 @@ impl AppState {
         }
 
         self.save_undo_state();
+        self.invalidate_compiled_sim();
 
         for node_id in self.selected_nodes.drain() {
             self.graph.remove_node(&node_id);
@@ -673,6 +847,9 @@ impl AppState {
         self.selected_nodes.clear();
         self.selected_connections.clear();
         self.plot_data.clear();
+        self.plot_labels.clear();
+        self.scope_data.clear();
+        self.spectrum_data.clear();
         self.undo_stack.clear();
         self.redo_stack.clear();
         self.id_counter = 0;
@@ -729,140 +906,629 @@ impl AppState {
         self.running
     }
 
+    /// Start async compilation of the current simulation graph
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn compile_simulation(&mut self) -> Result<(), String> {
+        use rustsim_codegen::CodeGenerator;
+
+        // Clear previous compilation log
+        self.compilation_log.clear();
+
+        // Set status to compiling
+        self.compilation_status = CompilationStatus::Compiling;
+        self.compilation_log.push("Starting compilation...".to_string());
+
+        // Generate code with parameter mapping
+        self.compilation_log.push("Generating Rust code from simulation graph...".to_string());
+        let generator = CodeGenerator::new()
+            .with_c_abi(false)
+            .with_library_mode(false);
+        let (code, param_mapping) = generator.generate_with_params(&self.graph, &self.settings);
+
+        self.compilation_log.push(format!(
+            "Code generation complete. {} runtime parameters.",
+            param_mapping.params.len()
+        ));
+
+        // Count states, inputs, and outputs
+        let (num_inputs, num_outputs, num_states) = self.count_io_for_compilation();
+        self.compilation_log.push(format!(
+            "Simulation dimensions: {} inputs, {} outputs, {} states",
+            num_inputs, num_outputs, num_states
+        ));
+
+        // Get workspace root
+        self.compilation_log.push("Locating workspace root...".to_string());
+        let workspace_root = std::env::current_dir()
+            .ok()
+            .and_then(|mut p| {
+                // Try to find workspace root by looking for Cargo.toml with [workspace]
+                loop {
+                    let cargo_toml = p.join("Cargo.toml");
+                    if cargo_toml.exists() {
+                        if let Ok(contents) = std::fs::read_to_string(&cargo_toml) {
+                            if contents.contains("[workspace]") {
+                                return Some(p);
+                            }
+                        }
+                    }
+                    if !p.pop() {
+                        break;
+                    }
+                }
+                None
+            })
+            .ok_or_else(|| "Could not find workspace root".to_string())?;
+
+        let workspace_root_str = workspace_root
+            .to_str()
+            .ok_or_else(|| "Invalid workspace path".to_string())?
+            .to_string();
+
+        self.compilation_log.push(format!("Workspace root: {}", workspace_root_str));
+
+        // Create channel for communication with compilation thread
+        let (tx, rx) = mpsc::channel();
+        self.compilation_receiver = Some(rx);
+
+        // Spawn compilation in background thread
+        std::thread::spawn(move || {
+            // Send log messages
+            let _ = tx.send(CompilationMessage::Log("Creating temporary build directory...".to_string()));
+            let _ = tx.send(CompilationMessage::Log("Writing generated code to src/lib.rs...".to_string()));
+            let _ = tx.send(CompilationMessage::Log("Creating Cargo.toml manifest...".to_string()));
+            let _ = tx.send(CompilationMessage::Log("Running 'cargo build --release --lib'...".to_string()));
+            let _ = tx.send(CompilationMessage::Log("This may take a while on first compilation...".to_string()));
+
+            // Perform compilation with parameter mapping
+            match CompiledSimulation::with_params(&code, &workspace_root_str, num_states, num_inputs, num_outputs, param_mapping) {
+                Ok(mut sim) => {
+                    let _ = tx.send(CompilationMessage::Log("Compilation successful!".to_string()));
+                    let _ = tx.send(CompilationMessage::Log("Loading compiled library...".to_string()));
+                    sim.init();
+                    let _ = tx.send(CompilationMessage::Log("Initializing simulation state...".to_string()));
+                    let _ = tx.send(CompilationMessage::Success(sim));
+                }
+                Err(e) => {
+                    let _ = tx.send(CompilationMessage::Log(format!("Compilation failed: {}", e)));
+                    let _ = tx.send(CompilationMessage::Error(e.to_string()));
+                }
+            }
+        });
+
+        self.compilation_log.push("Background compilation thread started.".to_string());
+        Ok(())
+    }
+
+    /// Poll compilation progress (call this regularly from UI update)
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn poll_compilation(&mut self) {
+        let mut should_close = false;
+
+        if let Some(ref rx) = self.compilation_receiver {
+            // Process all available messages without blocking
+            while let Ok(msg) = rx.try_recv() {
+                match msg {
+                    CompilationMessage::Log(text) => {
+                        self.compilation_log.push(text);
+                    }
+                    CompilationMessage::Success(sim) => {
+                        self.compiled_sim = Some(sim);
+                        self.compilation_status = CompilationStatus::Ready;
+                        self.compilation_log.push("Compilation complete and ready!".to_string());
+                        should_close = true;
+                    }
+                    CompilationMessage::Error(err) => {
+                        self.compilation_status = CompilationStatus::Error(err.clone());
+                        self.compilation_log.push(format!("Error: {}", err));
+                        should_close = true;
+                    }
+                }
+            }
+        }
+
+        if should_close {
+            self.compilation_receiver = None; // Close channel
+        }
+    }
+
+    /// Count inputs, outputs, and states for compiled simulation
+    #[cfg(not(target_arch = "wasm32"))]
+    fn count_io_for_compilation(&self) -> (usize, usize, usize) {
+        let num_inputs = 0;
+        let mut num_outputs = 0;
+        let mut num_states = 0;
+
+        for node in self.graph.nodes.values() {
+            match node.block_type.as_str() {
+                "Scope" | "Spectrum" => {
+                    // Recording blocks contribute to outputs
+                    num_outputs += node.inputs.len().max(1);
+                }
+                "Integrator" => {
+                    num_states += 1;
+                    num_outputs += 1;
+                }
+                "Differentiator" => {
+                    num_states += 1;
+                    num_outputs += 1;
+                }
+                "Constant" | "Sinusoidal" | "Step" | "Ramp" => {
+                    num_outputs += 1;
+                }
+                _ => {
+                    num_outputs += node.outputs.len().max(1);
+                }
+            }
+        }
+
+        (num_inputs.max(1), num_outputs.max(1), num_states.max(1))
+    }
+
+    /// On WASM, compilation is not supported yet
+    #[cfg(target_arch = "wasm32")]
+    pub fn compile_simulation(&mut self) -> Result<(), String> {
+        Err("Compilation not supported on WASM yet".to_string())
+    }
+
     pub fn run_simulation(&mut self) {
+        // If compiled mode is enabled and not yet compiled, compile first
+        #[cfg(not(target_arch = "wasm32"))]
+        if self.use_compiled_mode && self.compiled_sim.is_none() {
+            if let Err(e) = self.compile_simulation() {
+                eprintln!("Compilation failed: {}. Falling back to interpreter.", e);
+                self.use_compiled_mode = false;
+            }
+        }
+
         self.running = true;
         self.sim_time = 0.0;
         self.plot_data.clear();
-        self.integrator_states.clear();
+        self.plot_labels.clear();
+        self.scope_data.clear();
+        self.spectrum_data.clear();
 
-        // Initialize integrator states from node parameters
-        for (id, node) in &self.graph.nodes {
-            if node.block_type == "Integrator" {
-                let initial = node.get_param("initial_value")
-                    .and_then(|v| v.as_f64())
-                    .unwrap_or(0.0);
-                self.integrator_states.insert(id.clone(), initial);
+        // Clear result history when starting a new simulation to prevent duplicate traces
+        self.result_history.clear();
+
+        // Reset timing statistics
+        self.total_step_time = Duration::ZERO;
+        self.step_count = 0;
+
+        // Reset compiled simulation and sync parameters if in compiled mode
+        #[cfg(not(target_arch = "wasm32"))]
+        if self.use_compiled_mode {
+            // Sync parameters from graph before running
+            self.sync_compiled_params();
+
+            if let Some(ref mut sim) = self.compiled_sim {
+                // Reset time and internal states (but not params)
+                sim.state_mut().time = 0.0;
+                sim.state_mut().states.fill(0.0);
+                sim.state_mut().outputs.fill(0.0);
+            }
+        }
+
+        // Create block instances from graph
+        self.create_blocks_from_graph();
+
+        // Collect signal labels from Scope blocks
+        for (_id, node) in &self.graph.nodes {
+            if node.block_type == "Scope" {
+                // Add labels from Scope input ports
+                for input in &node.inputs {
+                    self.plot_labels.push(input.name.clone());
+                }
+            }
+        }
+
+        // If no scope blocks, create default labels for source blocks
+        if self.plot_labels.is_empty() {
+            let order = self.get_execution_order();
+            for node_id in &order {
+                if let Some(node) = self.graph.get_node(node_id) {
+                    if matches!(
+                        node.block_type.as_str(),
+                        "Constant" | "Sinusoidal" | "Step" | "Ramp" | "Integrator"
+                    ) {
+                        self.plot_labels
+                            .push(format!("{} ({})", node.name, node.block_type));
+                    }
+                }
             }
         }
     }
 
     pub fn stop_simulation(&mut self) {
         self.running = false;
+
+        // Save result to history when simulation completes
+        if !self.plot_data.is_empty() {
+            self.save_result_to_history();
+        }
+    }
+
+    /// Sync parameters from graph to compiled simulation.
+    /// Call this when parameters are changed in the UI before running the simulation.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn sync_compiled_params(&mut self) {
+        if let Some(ref mut sim) = self.compiled_sim {
+            let mapping = sim.param_mapping().clone();
+
+            // Update each parameter from the graph
+            for param in &mapping.params {
+                if let Some(node) = self.graph.get_node(&param.node_id) {
+                    if let Some(value) = node.get_param(&param.name).and_then(|v| v.as_f64()) {
+                        sim.set_param(&param.node_id, &param.name, value);
+                    }
+                }
+            }
+
+            // Reinitialize blocks with new parameters
+            sim.reinit();
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn sync_compiled_params(&mut self) {
+        // No-op on WASM
+    }
+
+    /// Save current simulation result to history for ghost traces
+    fn save_result_to_history(&mut self) {
+        let result = SimulationResult {
+            plot_data: self.plot_data.clone(),
+            plot_labels: self.plot_labels.clone(),
+        };
+
+        self.result_history.push_front(result);
+
+        // Keep max 6 results
+        while self.result_history.len() > 6 {
+            self.result_history.pop_back();
+        }
+    }
+
+    /// Clear result history
+    pub fn clear_result_history(&mut self) {
+        self.result_history.clear();
+    }
+
+    /// Create block instances from the current graph
+    fn create_blocks_from_graph(&mut self) {
+        self.blocks.clear();
+        self.execution_order = self.get_execution_order();
+
+        for node_id in &self.execution_order.clone() {
+            if let Some(node) = self.graph.get_node(node_id) {
+                let block = self.create_block_from_node(node);
+                if let Some(b) = block {
+                    self.blocks.insert(node_id.clone(), b);
+                }
+            }
+        }
+    }
+
+    /// Create a BlockKind instance from a node
+    fn create_block_from_node(&self, node: &NodeInstance) -> Option<BlockKind> {
+        let block_type = node.block_type.as_str();
+
+        Some(match block_type {
+            "Constant" => {
+                let value = node.get_param("value").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                BlockKind::Constant(Constant::new(value))
+            }
+            "Sinusoidal" => {
+                let amp = node.get_param("amplitude").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                let freq = node.get_param("frequency").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                let phase = node.get_param("phase").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                BlockKind::Sinusoidal(Sinusoidal::new(amp, freq, phase))
+            }
+            "Step" => {
+                let step_time = node.get_param("step_time").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                let final_val = node.get_param("final_value").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                BlockKind::Step(Step::new(final_val, step_time))
+            }
+            "Ramp" => {
+                let slope = node.get_param("slope").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                let start = node.get_param("start_time").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                BlockKind::Ramp(Ramp::new(slope, start))
+            }
+            "Amplifier" | "Gain" => {
+                let gain = node.get_param("gain")
+                    .or_else(|| node.get_param("k"))
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(1.0);
+                BlockKind::Amplifier(Amplifier::new(gain))
+            }
+            "Integrator" => {
+                let initial = node.get_param("initial_value").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                BlockKind::Integrator(Integrator::new(initial))
+            }
+            "Differentiator" => {
+                let tau = node.get_param("tau").and_then(|v| v.as_f64()).unwrap_or(0.01);
+                BlockKind::Differentiator(Differentiator::new(tau))
+            }
+            "PID" => {
+                let kp = node.get_param("kp").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                let ki = node.get_param("ki").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                let kd = node.get_param("kd").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                BlockKind::PID(PID::new(kp, ki, kd))
+            }
+            "Adder" => {
+                // Determine weights based on port names (+ or -)
+                let n = node.inputs.len().max(2);
+                let mut weights = vec![1.0; n];
+                for (i, port) in node.inputs.iter().enumerate() {
+                    if port.name.contains('-') {
+                        weights[i] = -1.0;
+                    }
+                }
+                match n {
+                    2 => BlockKind::Adder2(Adder::<2>::with_weights([weights[0], weights[1]])),
+                    3 => BlockKind::Adder3(Adder::<3>::with_weights([weights[0], weights[1], weights[2]])),
+                    _ => BlockKind::Adder4(Adder::<4>::with_weights([weights[0], weights[1], weights[2], weights.get(3).copied().unwrap_or(1.0)])),
+                }
+            }
+            "Multiplier" => {
+                let n = node.inputs.len().max(2);
+                match n {
+                    2 => BlockKind::Multiplier2(Multiplier::<2>::new()),
+                    3 => BlockKind::Multiplier3(Multiplier::<3>::new()),
+                    _ => BlockKind::Multiplier4(Multiplier::<4>::new()),
+                }
+            }
+            "Saturation" => {
+                let min = node.get_param("min").and_then(|v| v.as_f64()).unwrap_or(-1.0);
+                let max = node.get_param("max").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                BlockKind::Saturation(Saturation::new(min, max))
+            }
+            "Sin" => BlockKind::Sin(Sin::new()),
+            "Cos" => BlockKind::Cos(Cos::new()),
+            "Tan" => BlockKind::Tan(Tan::new()),
+            "Abs" => BlockKind::Abs(Abs::new()),
+            "Sqrt" => BlockKind::Sqrt(Sqrt::new()),
+            "Exp" => BlockKind::Exp(Exp::new()),
+            "Log" => BlockKind::Log(Log::new()),
+            "Sign" => BlockKind::Sign(Sign::new()),
+            "Pow" => {
+                let exp = node.get_param("exponent").and_then(|v| v.as_f64()).unwrap_or(2.0);
+                BlockKind::Pow(Pow::new(exp))
+            }
+            "Scope" => {
+                let n = node.inputs.len().max(1);
+                match n {
+                    1 => BlockKind::Scope1(Scope::<1, 1000>::new()),
+                    2 => BlockKind::Scope2(Scope::<2, 1000>::new()),
+                    _ => BlockKind::Scope4(Scope::<4, 1000>::new()),
+                }
+            }
+            "Pulse" => {
+                let amp = node.get_param("amplitude").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                let period = node.get_param("period").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                let width = node.get_param("pulse_width").and_then(|v| v.as_f64()).unwrap_or(0.5);
+                let rise = node.get_param("rise_time").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                let fall = node.get_param("fall_time").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                BlockKind::Pulse(Pulse::new(amp, period, width, rise, fall))
+            }
+            "SquareWave" => {
+                let amp = node.get_param("amplitude").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                let freq = node.get_param("frequency").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                let duty = node.get_param("duty_cycle").and_then(|v| v.as_f64()).unwrap_or(0.5);
+                BlockKind::SquareWave(SquareWave::new(amp, freq, duty))
+            }
+            "TriangleWave" => {
+                let amp = node.get_param("amplitude").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                let freq = node.get_param("frequency").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                BlockKind::TriangleWave(TriangleWave::new(amp, freq))
+            }
+            "Comparator" => {
+                let threshold = node.get_param("threshold").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                BlockKind::Comparator(Comparator::new(threshold))
+            }
+            "Relay" => {
+                let off_thresh = node.get_param("off_threshold").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                let on_thresh = node.get_param("on_threshold").and_then(|v| v.as_f64()).unwrap_or(0.5);
+                BlockKind::Relay(Relay::new(off_thresh, on_thresh))
+            }
+            "LowpassRC" => {
+                let cutoff = node.get_param("cutoff").and_then(|v| v.as_f64()).unwrap_or(10.0);
+                BlockKind::LowpassRC(LowpassRC::new(cutoff))
+            }
+            "HighpassRC" => {
+                let cutoff = node.get_param("cutoff").and_then(|v| v.as_f64()).unwrap_or(10.0);
+                BlockKind::HighpassRC(HighpassRC::new(cutoff))
+            }
+            "RateLimiter" => {
+                let rate = node.get_param("rate").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                BlockKind::RateLimiter(RateLimiter::new(rate))
+            }
+            "Min" => BlockKind::Min2(Min::<2>::new()),
+            "Max" => BlockKind::Max2(Max::<2>::new()),
+            _ => return None, // Unknown block type
+        })
     }
 
     pub fn step_simulation(&mut self) {
+        let step_start = Instant::now();
         let dt = self.settings.dt;
-        let mut outputs: Vec<f64> = Vec::new();
 
-        // Get execution order (simple topological sort)
-        let order = self.get_execution_order();
+        // Use compiled simulation if available
+        #[cfg(not(target_arch = "wasm32"))]
+        if self.use_compiled_mode {
+            if let Some(ref mut sim) = self.compiled_sim {
+                // Record time BEFORE stepping (to match interpreter behavior)
+                let t = self.sim_time;
 
-        // Store computed values for wiring
-        let mut values: std::collections::HashMap<String, f64> = std::collections::HashMap::new();
+                // Step the compiled simulation
+                sim.step(dt);
 
-        for node_id in &order {
-            if let Some(node) = self.graph.get_node(node_id) {
-                let output = match node.block_type.as_str() {
-                    "Constant" => {
-                        node.get_param("value")
-                            .and_then(|v| v.as_f64())
-                            .unwrap_or(1.0)
-                    }
-                    "Sinusoidal" => {
-                        let amp = node.get_param("amplitude").and_then(|v| v.as_f64()).unwrap_or(1.0);
-                        let freq = node.get_param("frequency").and_then(|v| v.as_f64()).unwrap_or(1.0);
-                        let phase = node.get_param("phase").and_then(|v| v.as_f64()).unwrap_or(0.0);
-                        amp * (2.0 * std::f64::consts::PI * freq * self.sim_time + phase).sin()
-                    }
-                    "Step" => {
-                        let step_time = node.get_param("step_time").and_then(|v| v.as_f64()).unwrap_or(1.0);
-                        let initial = node.get_param("initial").and_then(|v| v.as_f64()).unwrap_or(0.0);
-                        let final_val = node.get_param("final_value").and_then(|v| v.as_f64()).unwrap_or(1.0);
-                        if self.sim_time >= step_time { final_val } else { initial }
-                    }
-                    "Ramp" => {
-                        let slope = node.get_param("slope").and_then(|v| v.as_f64()).unwrap_or(1.0);
-                        let start_time = node.get_param("start_time").and_then(|v| v.as_f64()).unwrap_or(0.0);
-                        if self.sim_time >= start_time {
-                            slope * (self.sim_time - start_time)
-                        } else {
-                            0.0
+                // Get all outputs from compiled simulation
+                let all_outputs: Vec<f64> = (0..sim.state().outputs.len())
+                    .map(|i| sim.get_output(i))
+                    .collect();
+
+                // Extract only Scope outputs (matching interpreter behavior)
+                // The compiled sim outputs all blocks, but we only want Scope inputs for plotting
+                // IMPORTANT: Use execution_order to match code generator's output order
+                let mut scope_outputs: Vec<f64> = Vec::new();
+                let mut output_idx = 0;
+
+                // Build execution order to match code generator
+                let order = self.execution_order.clone();
+
+                // Iterate through nodes in topological order (matching code generator)
+                for node_id in &order {
+                    if let Some(node) = self.graph.get_node(node_id) {
+                        match node.block_type.as_str() {
+                            "Scope" | "Spectrum" => {
+                                // Recording blocks - collect their outputs for plotting
+                                let input_count = node.inputs.len().max(1);
+                                let mut node_data = Vec::new();
+                                for _ in 0..input_count {
+                                    if output_idx < all_outputs.len() {
+                                        let val = all_outputs[output_idx];
+                                        scope_outputs.push(val);
+                                        node_data.push(val);
+                                        output_idx += 1;
+                                    }
+                                }
+                                // Store in scope_data for preview
+                                if !node_data.is_empty() {
+                                    self.scope_data
+                                        .entry(node_id.clone())
+                                        .or_insert_with(Vec::new)
+                                        .push((t, node_data));
+                                }
+                            }
+                            _ => {
+                                // Other blocks - skip their outputs (they're in all_outputs but we don't plot them)
+                                output_idx += node.outputs.len().max(1);
+                            }
                         }
                     }
-                    "Amplifier" | "Gain" => {
-                        let gain = node.get_param("gain")
-                            .or_else(|| node.get_param("k"))
-                            .and_then(|v| v.as_f64())
-                            .unwrap_or(1.0);
-                        let input = self.get_input_value(node_id, 0, &values);
-                        input * gain
-                    }
-                    "Adder" => {
-                        let mut sum = 0.0;
-                        for i in 0..node.inputs.len().max(2) {
-                            sum += self.get_input_value(node_id, i, &values);
-                        }
-                        sum
-                    }
-                    "Multiplier" => {
-                        let mut product = 1.0;
-                        for i in 0..node.inputs.len().max(2) {
-                            product *= self.get_input_value(node_id, i, &values);
-                        }
-                        product
-                    }
-                    "Sin" => {
-                        let input = self.get_input_value(node_id, 0, &values);
-                        input.sin()
-                    }
-                    "Cos" => {
-                        let input = self.get_input_value(node_id, 0, &values);
-                        input.cos()
-                    }
-                    "Abs" => {
-                        let input = self.get_input_value(node_id, 0, &values);
-                        input.abs()
-                    }
-                    "Sqrt" => {
-                        let input = self.get_input_value(node_id, 0, &values);
-                        input.abs().sqrt()
-                    }
-                    "Integrator" => {
-                        let input = self.get_input_value(node_id, 0, &values);
-                        // Get current state value and update it
-                        let current = *self.integrator_states.get(node_id).unwrap_or(&0.0);
-                        let new_val = current + input * dt;
-                        self.integrator_states.insert(node_id.clone(), new_val);
-                        new_val
-                    }
-                    "Scope" | "Spectrum" => {
-                        // Recording blocks just pass through their input
-                        let input = self.get_input_value(node_id, 0, &values);
-                        outputs.push(input);
-                        input
-                    }
-                    _ => 0.0,
-                };
+                }
 
-                values.insert(node_id.clone(), output);
+                // If no scope blocks, fall back to source block outputs
+                if scope_outputs.is_empty() {
+                    output_idx = 0;
+                    for node_id in &order {
+                        if let Some(node) = self.graph.get_node(node_id) {
+                            if matches!(
+                                node.block_type.as_str(),
+                                "Constant" | "Sinusoidal" | "Step" | "Ramp" | "Integrator"
+                            ) {
+                                if output_idx < all_outputs.len() {
+                                    scope_outputs.push(all_outputs[output_idx]);
+                                }
+                            }
+                            // Advance output_idx for all blocks
+                            match node.block_type.as_str() {
+                                "Scope" | "Spectrum" => output_idx += node.inputs.len().max(1),
+                                _ => output_idx += node.outputs.len().max(1),
+                            }
+                        }
+                    }
+                }
+
+                self.plot_data.push((t, scope_outputs));
+                self.sim_time += dt;
+
+                // Record timing
+                self.total_step_time += step_start.elapsed();
+                self.step_count += 1;
+                return;
+            } else {
+                // No compiled sim available, fall back to interpreter
+                self.use_compiled_mode = false;
             }
         }
 
-        // If no scope blocks, record all source block outputs
+        // Interpreter mode using real block instances
+        let t = self.sim_time;
+        let mut outputs: Vec<f64> = Vec::new();
+
+        // Process blocks in execution order
+        let order = self.execution_order.clone();
+        for node_id in &order {
+            // Wire inputs from connected source blocks
+            let connections: Vec<_> = self.graph.get_connections_to(node_id)
+                .iter()
+                .map(|c| (c.source_node_id.clone(), c.source_port_index, c.target_port_index))
+                .collect();
+
+            for (source_id, source_port, target_port) in connections {
+                if let Some(source_block) = self.blocks.get(&source_id) {
+                    let value = source_block.get_output(source_port);
+                    if let Some(target_block) = self.blocks.get_mut(node_id) {
+                        target_block.set_input(target_port, value);
+                    }
+                }
+            }
+
+            // Update and step the block
+            if let Some(block) = self.blocks.get_mut(node_id) {
+                block.update(t);
+                block.step(t, dt);
+            }
+        }
+
+        // Collect outputs from Scope blocks
+        for node_id in &order {
+            if let Some(node) = self.graph.get_node(node_id) {
+                if node.block_type == "Scope" || node.block_type == "Spectrum" {
+                    if let Some(block) = self.blocks.get(node_id) {
+                        let mut node_data = Vec::new();
+                        for i in 0..node.inputs.len().max(1) {
+                            let val = block.get_output(i);
+                            outputs.push(val);
+                            node_data.push(val);
+                        }
+                        self.scope_data
+                            .entry(node_id.clone())
+                            .or_insert_with(Vec::new)
+                            .push((t, node_data));
+                    }
+                }
+            }
+        }
+
+        // If no scope blocks, record outputs from source blocks
         if outputs.is_empty() {
             for node_id in &order {
                 if let Some(node) = self.graph.get_node(node_id) {
-                    if matches!(node.block_type.as_str(), "Constant" | "Sinusoidal" | "Step" | "Ramp" | "Integrator") {
-                        if let Some(&val) = values.get(node_id) {
-                            outputs.push(val);
+                    if matches!(
+                        node.block_type.as_str(),
+                        "Constant" | "Sinusoidal" | "Step" | "Ramp" | "Integrator"
+                    ) {
+                        if let Some(block) = self.blocks.get(node_id) {
+                            outputs.push(block.get_output(0));
                         }
                     }
                 }
             }
         }
 
-        self.plot_data.push((self.sim_time, outputs));
+        self.plot_data.push((t, outputs));
         self.sim_time += dt;
+
+        // Record timing
+        self.total_step_time += step_start.elapsed();
+        self.step_count += 1;
+    }
+
+    /// Get average step execution time
+    pub fn average_step_time(&self) -> Option<Duration> {
+        if self.step_count > 0 {
+            Some(self.total_step_time / self.step_count as u32)
+        } else {
+            None
+        }
+    }
+
+    /// Get total step count
+    pub fn get_step_count(&self) -> u64 {
+        self.step_count
     }
 
     /// Get execution order using topological sort (stable ordering)
@@ -916,7 +1582,10 @@ impl AppState {
         }
 
         // Add any remaining nodes in sorted order (in case of cycles)
-        let mut remaining: Vec<_> = self.graph.nodes.keys()
+        let mut remaining: Vec<_> = self
+            .graph
+            .nodes
+            .keys()
             .filter(|id| !result.contains(id))
             .cloned()
             .collect();
@@ -924,18 +1593,6 @@ impl AppState {
         result.extend(remaining);
 
         result
-    }
-
-    /// Get input value from connected node
-    fn get_input_value(&self, target_node_id: &str, target_port: usize, values: &std::collections::HashMap<String, f64>) -> f64 {
-        for conn in &self.graph.connections {
-            if conn.target_node_id == target_node_id && conn.target_port_index == target_port {
-                if let Some(&val) = values.get(&conn.source_node_id) {
-                    return val;
-                }
-            }
-        }
-        0.0
     }
 }
 

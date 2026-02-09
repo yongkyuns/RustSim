@@ -3,6 +3,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app;
+mod compiler;
+mod examples;
+mod layout;
+mod plotting;
+mod spectrum_utils;
 mod state;
 mod ui;
 

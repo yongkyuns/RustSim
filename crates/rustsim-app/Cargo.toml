@@ -30,21 +30,39 @@ anyhow = { workspace = true }
 # Syntax highlighting
 syntect = { workspace = true }
 
+# FFT for spectrum analysis
+rustfft = { workspace = true }
+num-complex = { workspace = true }
+
+# Graph layout
+layout-rs = { workspace = true }
+
 # Native only
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 futures = { workspace = true }
+tokio = { workspace = true }
 env_logger = "0.11"
+rfd = { workspace = true }
+libloading = { workspace = true }
+tempfile = { workspace = true }
 
 # WASM only
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = { workspace = true }
 wasm-bindgen-futures = { workspace = true }
+web-sys = { version = "0.3", features = ["Blob", "BlobPropertyBag", "Document", "Element", "HtmlAnchorElement", "Url", "Window"] }
+js-sys = "0.3"
 
 [dev-dependencies]
 egui_kittest = "0.30"
+approx = { workspace = true }
 
 [features]
 default = []
+
+[lib]
+name = "rustsim_app"
+path = "src/lib.rs"
 
 [[bin]]
 name = "rustsim"

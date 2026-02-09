@@ -4,8 +4,8 @@ use eframe::egui;
 
 use crate::state::AppState;
 use crate::ui::{
-    render_block_palette, render_code_viewer, render_node_graph, render_plots,
-    render_properties_panel, render_toolbar,
+    render_block_palette, render_code_viewer, render_compilation_log, render_node_graph,
+    render_plots, render_properties_panel, render_toolbar,
 };
 
 /// Main application
@@ -18,6 +18,7 @@ pub struct RustSimApp {
     show_properties: bool,
     show_plots: bool,
     show_code: bool,
+    show_compilation_log: bool,
 
     /// Panel sizes (for resizing)
     palette_width: f32,
@@ -37,6 +38,7 @@ impl RustSimApp {
             show_properties: false,
             show_plots: true,
             show_code: false,
+            show_compilation_log: false,
             palette_width: 200.0,
             properties_width: 300.0,
             plots_height: 200.0,
@@ -110,9 +112,7 @@ impl RustSimApp {
                                         .unwrap_or(0.0);
 
                                     let mut val = current_val;
-                                    if ui
-                                        .add(egui::DragValue::new(&mut val).speed(0.01))
-                                        .changed()
+                                    if ui.add(egui::DragValue::new(&mut val).speed(0.01)).changed()
                                     {
                                         node.set_param(param_name, serde_json::json!(val));
                                     }
@@ -120,7 +120,9 @@ impl RustSimApp {
                             }
                         }
 
-                        if block_def.is_none() || block_def.as_ref().map_or(true, |b| b.params.is_empty()) {
+                        if block_def.is_none()
+                            || block_def.as_ref().map_or(true, |b| b.params.is_empty())
+                        {
                             ui.label("No parameters for this block");
                         }
                     }
@@ -182,6 +184,10 @@ impl RustSimApp {
 
 impl eframe::App for RustSimApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Poll compilation progress (for async compilation)
+        #[cfg(not(target_arch = "wasm32"))]
+        self.state.poll_compilation();
+
         // Handle keyboard shortcuts
         self.handle_keyboard(ctx);
 
@@ -189,7 +195,7 @@ impl eframe::App for RustSimApp {
         egui::TopBottomPanel::top("toolbar")
             .exact_height(48.0)
             .show(ctx, |ui| {
-                render_toolbar(ui, &mut self.state);
+                render_toolbar(ui, &mut self.state, &mut self.show_compilation_log);
             });
 
         // Left panel - Block palette
@@ -200,7 +206,6 @@ impl eframe::App for RustSimApp {
                 .min_width(150.0)
                 .max_width(350.0)
                 .show(ctx, |ui| {
-                    self.palette_width = ui.available_width();
                     render_block_palette(ui, &mut self.state);
                 });
         }
@@ -213,7 +218,6 @@ impl eframe::App for RustSimApp {
                 .min_width(300.0)
                 .max_width(800.0)
                 .show(ctx, |ui| {
-                    self.code_width = ui.available_width();
                     render_code_viewer(ui, &mut self.state);
                 });
         }
@@ -226,7 +230,6 @@ impl eframe::App for RustSimApp {
                 .min_width(200.0)
                 .max_width(500.0)
                 .show(ctx, |ui| {
-                    self.properties_width = ui.available_width();
                     render_properties_panel(ui, &mut self.state);
                 });
         }
@@ -239,7 +242,6 @@ impl eframe::App for RustSimApp {
                 .min_height(100.0)
                 .max_height(500.0)
                 .show(ctx, |ui| {
-                    self.plots_height = ui.available_height();
                     render_plots(ui, &mut self.state);
                 });
         }
@@ -270,7 +272,7 @@ impl eframe::App for RustSimApp {
                     self.show_plots = !self.show_plots;
                 }
                 if ui
-                    .selectable_label(self.show_code, "</>" )
+                    .selectable_label(self.show_code, "</>")
                     .on_hover_text("Code Viewer")
                     .clicked()
                 {
@@ -290,6 +292,10 @@ impl eframe::App for RustSimApp {
                 if ui.button("Fit").clicked() {
                     self.state.fit_view();
                 }
+
+                ui.separator();
+
+                ui.checkbox(&mut self.state.show_canvas_grid, "Grid");
             });
 
             ui.separator();
@@ -300,6 +306,11 @@ impl eframe::App for RustSimApp {
 
         // Parameter edit window (shown on double-click)
         self.show_parameter_editor(ctx);
+
+        // Compilation log window
+        if self.show_compilation_log {
+            render_compilation_log(ctx, &mut self.state, &mut self.show_compilation_log);
+        }
 
         // Step simulation when running
         if self.state.is_running() {
@@ -312,6 +323,12 @@ impl eframe::App for RustSimApp {
             }
 
             // Request continuous repaint
+            ctx.request_repaint();
+        }
+
+        // Request repaint when compilation is in progress
+        #[cfg(not(target_arch = "wasm32"))]
+        if matches!(self.state.compilation_status, crate::state::CompilationStatus::Compiling) {
             ctx.request_repaint();
         }
     }
