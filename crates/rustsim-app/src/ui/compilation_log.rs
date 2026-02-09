@@ -20,7 +20,7 @@ pub fn render_compilation_log(ctx: &egui::Context, state: &mut AppState, open: &
             // Show compilation status
             ui.horizontal(|ui| {
                 ui.label("Status:");
-                match &state.compilation_status {
+                match state.compilation_status() {
                     crate::state::CompilationStatus::NotCompiled => {
                         ui.label("Not compiled");
                     }
@@ -44,10 +44,10 @@ pub fn render_compilation_log(ctx: &egui::Context, state: &mut AppState, open: &
                 .auto_shrink([false; 2])
                 .stick_to_bottom(true)
                 .show(ui, |ui| {
-                    if state.compilation_log.is_empty() {
+                    if state.compilation_log().is_empty() {
                         ui.label("No compilation activity yet.");
                     } else {
-                        for (i, msg) in state.compilation_log.iter().enumerate() {
+                        for (i, msg) in state.compilation_log().iter().enumerate() {
                             ui.horizontal(|ui| {
                                 ui.monospace(format!("[{}] {}", i + 1, msg));
                             });
@@ -60,7 +60,7 @@ pub fn render_compilation_log(ctx: &egui::Context, state: &mut AppState, open: &
             // Action buttons
             ui.horizontal(|ui| {
                 if ui.button("Clear Log").clicked() {
-                    state.compilation_log.clear();
+                    state.clear_compilation_log();
                 }
 
                 #[cfg(not(target_arch = "wasm32"))]
@@ -68,12 +68,12 @@ pub fn render_compilation_log(ctx: &egui::Context, state: &mut AppState, open: &
                     use crate::state::CompilationStatus;
 
                     if matches!(
-                        state.compilation_status,
+                        state.compilation_status(),
                         CompilationStatus::NotCompiled | CompilationStatus::Error(_)
                     ) {
                         if ui.button("Compile").clicked() {
                             if let Err(e) = state.compile_simulation() {
-                                state.compilation_log.push(format!("Failed to start compilation: {}", e));
+                                state.push_compilation_log(format!("Failed to start compilation: {}", e));
                             }
                         }
                     }

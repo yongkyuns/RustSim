@@ -1,7 +1,7 @@
 //! Code viewer UI component with syntax highlighting.
 
 use egui::{text::LayoutJob, Color32, FontId, ScrollArea, TextFormat, Ui};
-use rustsim_codegen::CodeGenerator;
+use rustsim_codegen::EmbeddedGenerator;
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Style, ThemeSet};
 use syntect::parsing::SyntaxSet;
@@ -76,11 +76,7 @@ impl SyntaxHighlighter {
 
 /// Convert syntect color to egui color
 fn syntect_color_to_egui(style: Style) -> Color32 {
-    Color32::from_rgb(
-        style.foreground.r,
-        style.foreground.g,
-        style.foreground.b,
-    )
+    Color32::from_rgb(style.foreground.r, style.foreground.g, style.foreground.b)
 }
 
 thread_local! {
@@ -97,15 +93,11 @@ pub fn render_code_viewer(ui: &mut Ui, state: &mut AppState) {
             let code = generate_code(state);
             ui.output_mut(|o| o.copied_text = code);
         }
-
-        ui.separator();
-
-        ui.checkbox(&mut state.generate_c_abi, "C ABI exports");
     });
 
     ui.separator();
 
-    if state.graph.nodes.is_empty() {
+    if state.graph().nodes.is_empty() {
         ui.centered_and_justified(|ui| {
             ui.label("Add blocks to see generated code");
         });
@@ -132,6 +124,6 @@ pub fn render_code_viewer(ui: &mut Ui, state: &mut AppState) {
 
 /// Generate code from the current graph
 fn generate_code(state: &AppState) -> String {
-    let generator = CodeGenerator::new().with_c_abi(state.generate_c_abi);
-    generator.generate(&state.graph, &state.settings)
+    let generator = EmbeddedGenerator::new("Simulation");
+    generator.generate(state.graph(), state.settings())
 }

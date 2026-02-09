@@ -36,13 +36,29 @@ pub struct StepResult {
 /// ```
 pub trait Block {
     /// Number of input ports (compile-time constant)
+    ///
+    /// Note: Also available as a method via `num_inputs()` for trait object compatibility.
     const NUM_INPUTS: usize;
 
     /// Number of output ports (compile-time constant)
+    ///
+    /// Note: Also available as a method via `num_outputs()` for trait object compatibility.
     const NUM_OUTPUTS: usize;
 
     /// Returns true if this block has dynamic state (integrators, ODEs)
+    ///
+    /// Note: Also available as a method via `is_dynamic()` for trait object compatibility.
     const IS_DYNAMIC: bool = false;
+
+    /// Get number of input ports (runtime method for trait objects)
+    fn num_inputs(&self) -> usize {
+        Self::NUM_INPUTS
+    }
+
+    /// Get number of output ports (runtime method for trait objects)
+    fn num_outputs(&self) -> usize {
+        Self::NUM_OUTPUTS
+    }
 
     /// Access inputs as slice
     fn inputs(&self) -> &[f64];
@@ -94,6 +110,15 @@ pub trait Block {
     #[inline]
     fn get_output(&self, port: usize) -> f64 {
         self.outputs()[port]
+    }
+
+    /// Check if this block is dynamic (has state that needs integration)
+    ///
+    /// Default implementation returns IS_DYNAMIC constant.
+    /// This method enables runtime checking for trait objects.
+    #[inline]
+    fn is_dynamic(&self) -> bool {
+        Self::IS_DYNAMIC
     }
 }
 

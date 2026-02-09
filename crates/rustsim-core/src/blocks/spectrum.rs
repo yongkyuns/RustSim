@@ -4,7 +4,7 @@
 
 use crate::block::{Block, DynamicBlock, StepResult};
 use num_complex::Complex64;
-use rustfft::{FftPlanner, num_complex::Complex};
+use rustfft::{num_complex::Complex, FftPlanner};
 
 /// Spectrum analyzer block using FFT on buffered samples
 ///
@@ -97,7 +97,10 @@ impl<const CHANNELS: usize, const WINDOW_SIZE: usize> Spectrum<CHANNELS, WINDOW_
 
         // Check if WINDOW_SIZE is power of 2 for efficient FFT
         if !WINDOW_SIZE.is_power_of_two() {
-            eprintln!("Warning: WINDOW_SIZE {} is not a power of 2. FFT will be slower.", WINDOW_SIZE);
+            eprintln!(
+                "Warning: WINDOW_SIZE {} is not a power of 2. FFT will be slower.",
+                WINDOW_SIZE
+            );
         }
 
         Self {
@@ -230,9 +233,7 @@ impl<const CHANNELS: usize, const WINDOW_SIZE: usize> Spectrum<CHANNELS, WINDOW_
     pub fn magnitude(&mut self) -> Vec<Vec<f64>> {
         let spec = self.spectrum();
         spec.iter()
-            .map(|channel_spec| {
-                channel_spec.iter().map(|c| c.norm()).collect()
-            })
+            .map(|channel_spec| channel_spec.iter().map(|c| c.norm()).collect())
             .collect()
     }
 
@@ -240,9 +241,7 @@ impl<const CHANNELS: usize, const WINDOW_SIZE: usize> Spectrum<CHANNELS, WINDOW_
     pub fn phase(&mut self) -> Vec<Vec<f64>> {
         let spec = self.spectrum();
         spec.iter()
-            .map(|channel_spec| {
-                channel_spec.iter().map(|c| c.arg()).collect()
-            })
+            .map(|channel_spec| channel_spec.iter().map(|c| c.arg()).collect())
             .collect()
     }
 
@@ -251,8 +250,15 @@ impl<const CHANNELS: usize, const WINDOW_SIZE: usize> Spectrum<CHANNELS, WINDOW_
         let mag = self.magnitude();
         mag.iter()
             .map(|channel_mag| {
-                channel_mag.iter()
-                    .map(|&m| if m > 0.0 { 20.0 * m.log10() } else { -std::f64::INFINITY })
+                channel_mag
+                    .iter()
+                    .map(|&m| {
+                        if m > 0.0 {
+                            20.0 * m.log10()
+                        } else {
+                            -std::f64::INFINITY
+                        }
+                    })
                     .collect()
             })
             .collect()

@@ -456,6 +456,11 @@ mod tests {
             }
 
             #[no_mangle]
+            pub fn sim_reinit(_state: &SimState) {
+                // No-op for simple test
+            }
+
+            #[no_mangle]
             pub fn sim_step(state: &mut SimState, dt: f64) {
                 state.time += dt;
                 if !state.states.is_empty() {
@@ -496,6 +501,11 @@ mod tests {
             #[no_mangle]
             pub fn sim_init(state: &mut SimState) {
                 state.time = 0.0;
+            }
+
+            #[no_mangle]
+            pub fn sim_reinit(_state: &SimState) {
+                // No-op for simple test
             }
 
             #[no_mangle]

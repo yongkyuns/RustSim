@@ -12,12 +12,12 @@ pub fn render_spectrum_plot(ui: &mut Ui, state: &AppState) {
     ui.horizontal(|ui| {
         ui.heading("Spectrum Analysis");
         ui.separator();
-        ui.label(format!("{} points", state.plot_data.len()));
+        ui.label(format!("{} points", state.plot_data().len()));
     });
 
     ui.separator();
 
-    if state.plot_data.is_empty() {
+    if state.plot_data().is_empty() {
         ui.centered_and_justified(|ui| {
             ui.label("Run simulation to see spectrum");
         });
@@ -25,10 +25,10 @@ pub fn render_spectrum_plot(ui: &mut Ui, state: &AppState) {
     }
 
     // Compute FFT on the plot data
-    let sample_rate = 1.0 / state.settings.dt;
+    let sample_rate = 1.0 / state.settings().dt;
     let window_size = 1024; // Default FFT window size
 
-    let (frequencies, magnitudes) = compute_fft(&state.plot_data, sample_rate, window_size);
+    let (frequencies, magnitudes) = compute_fft(state.plot_data(), sample_rate, window_size);
 
     if frequencies.is_empty() {
         ui.centered_and_justified(|ui| {
@@ -64,11 +64,11 @@ pub fn render_spectrum_plot(ui: &mut Ui, state: &AppState) {
         .x_axis_label("Frequency [Hz]")
         .y_axis_label("Magnitude [dB]");
 
-    if state.plot_settings.show_grid {
+    if state.plot_settings().show_grid {
         plot = plot.show_grid(true);
     }
 
-    if state.plot_settings.show_legend {
+    if state.plot_settings().show_legend {
         plot = plot.legend(egui_plot::Legend::default());
     }
 
@@ -80,7 +80,7 @@ pub fn render_spectrum_plot(ui: &mut Ui, state: &AppState) {
             // Get or create trace style
             let default_color = get_default_color(signal_idx);
             let style = state
-                .plot_settings
+                .plot_settings()
                 .get_trace_style(&trace_key)
                 .cloned()
                 .unwrap_or_else(|| {
@@ -107,7 +107,7 @@ pub fn render_spectrum_plot(ui: &mut Ui, state: &AppState) {
 
             // Get signal name from labels or use default
             let signal_name = state
-                .plot_labels
+                .plot_labels()
                 .get(signal_idx)
                 .cloned()
                 .unwrap_or_else(|| format!("Signal {}", signal_idx));
@@ -150,12 +150,12 @@ pub fn render_spectrum_plot_linear(ui: &mut Ui, state: &AppState) {
     ui.horizontal(|ui| {
         ui.heading("Spectrum Analysis (Linear)");
         ui.separator();
-        ui.label(format!("{} points", state.plot_data.len()));
+        ui.label(format!("{} points", state.plot_data().len()));
     });
 
     ui.separator();
 
-    if state.plot_data.is_empty() {
+    if state.plot_data().is_empty() {
         ui.centered_and_justified(|ui| {
             ui.label("Run simulation to see spectrum");
         });
@@ -163,10 +163,10 @@ pub fn render_spectrum_plot_linear(ui: &mut Ui, state: &AppState) {
     }
 
     // Compute FFT on the plot data
-    let sample_rate = 1.0 / state.settings.dt;
+    let sample_rate = 1.0 / state.settings().dt;
     let window_size = 1024;
 
-    let (frequencies, magnitudes) = compute_fft(&state.plot_data, sample_rate, window_size);
+    let (frequencies, magnitudes) = compute_fft(state.plot_data(), sample_rate, window_size);
 
     if frequencies.is_empty() {
         ui.centered_and_justified(|ui| {
@@ -184,11 +184,11 @@ pub fn render_spectrum_plot_linear(ui: &mut Ui, state: &AppState) {
         .x_axis_label("Frequency [Hz]")
         .y_axis_label("Magnitude");
 
-    if state.plot_settings.show_grid {
+    if state.plot_settings().show_grid {
         plot = plot.show_grid(true);
     }
 
-    if state.plot_settings.show_legend {
+    if state.plot_settings().show_legend {
         plot = plot.legend(egui_plot::Legend::default());
     }
 
@@ -197,7 +197,7 @@ pub fn render_spectrum_plot_linear(ui: &mut Ui, state: &AppState) {
             let trace_key = format!("signal-{}", signal_idx);
             let default_color = get_default_color(signal_idx);
             let style = state
-                .plot_settings
+                .plot_settings()
                 .get_trace_style(&trace_key)
                 .cloned()
                 .unwrap_or_else(|| crate::ui::TraceStyle {
@@ -218,7 +218,7 @@ pub fn render_spectrum_plot_linear(ui: &mut Ui, state: &AppState) {
                 .collect();
 
             let signal_name = state
-                .plot_labels
+                .plot_labels()
                 .get(signal_idx)
                 .cloned()
                 .unwrap_or_else(|| format!("Signal {}", signal_idx));

@@ -107,13 +107,14 @@ fn test_zpk_with_real_zero() {
     zpk.update(0.0);
 
     let dt = 0.01;
-    for _ in 0..1000 {  // Run longer to ensure convergence
+    for _ in 0..1000 {
+        // Run longer to ensure convergence
         zpk.step(0.0, dt);
     }
 
     // Steady state: H(0) = (0 + 3) / (0 + 1) = 3.0
     // But since this has a lead, check we're close
-    assert_relative_eq!(zpk.get_output(0), 3.0, epsilon = 1.0);  // More relaxed tolerance
+    assert_relative_eq!(zpk.get_output(0), 3.0, epsilon = 1.0); // More relaxed tolerance
 }
 
 #[test]

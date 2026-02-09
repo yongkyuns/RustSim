@@ -5,10 +5,13 @@
 mod app;
 mod compiler;
 mod examples;
+mod icons;
 mod layout;
 mod plotting;
+mod routing;
 mod spectrum_utils;
 mod state;
+mod subsystem;
 mod ui;
 
 use app::RustSimApp;

@@ -1,5 +1,6 @@
 //! Auto-layout for simulation graphs using layout-rs (Sugiyama-style layered layout).
 
+use crate::routing::RotationOptimizer;
 use layout::backends::svg::SVGWriter;
 use layout::core::base::Orientation;
 use layout::core::geometry::Point;
@@ -92,7 +93,29 @@ pub fn apply_layout(graph: &mut SimulationGraph, positions: &HashMap<String, Pos
 }
 
 /// Perform auto-layout on a simulation graph (compute and apply in one step)
+/// Also optimizes node rotations to minimize wire crossings.
 pub fn auto_layout(graph: &mut SimulationGraph) {
+    // Step 1: Compute and apply positions using Sugiyama algorithm
+    let positions = compute_layout(graph);
+    apply_layout(graph, &positions);
+
+    // Step 2: Optimize rotations to minimize wire crossings
+    optimize_rotations(graph);
+}
+
+/// Optimize node rotations to minimize wire crossings
+pub fn optimize_rotations(graph: &mut SimulationGraph) {
+    if graph.nodes.is_empty() || graph.connections.is_empty() {
+        return;
+    }
+
+    let optimizer = RotationOptimizer::new();
+    let optimal_rotations = optimizer.optimize_rotations(&graph.nodes, &graph.connections);
+    RotationOptimizer::apply_rotations(&mut graph.nodes, &optimal_rotations);
+}
+
+/// Perform position layout only (without rotation optimization)
+pub fn auto_layout_positions_only(graph: &mut SimulationGraph) {
     let positions = compute_layout(graph);
     apply_layout(graph, &positions);
 }
@@ -101,6 +124,7 @@ pub fn auto_layout(graph: &mut SimulationGraph) {
 mod tests {
     use super::*;
     use crate::examples;
+    use crate::routing::OrthogonalRouter;
 
     #[test]
     fn test_auto_layout_pid() {
@@ -132,5 +156,41 @@ mod tests {
         auto_layout(&mut graph);
         // Should not panic on empty graph
         assert!(graph.nodes.is_empty());
+    }
+
+    #[test]
+    fn test_rotation_optimization() {
+        let mut graph = examples::pid_controller();
+
+        // Get crossings before optimization
+        let router = OrthogonalRouter::new();
+        let crossings_before = router.count_crossings(&graph.connections, &graph.nodes);
+
+        // Optimize rotations
+        optimize_rotations(&mut graph);
+
+        // Crossings should not increase
+        let crossings_after = router.count_crossings(&graph.connections, &graph.nodes);
+        assert!(
+            crossings_after <= crossings_before,
+            "Rotation optimization should not increase crossings"
+        );
+    }
+
+    #[test]
+    fn test_auto_layout_includes_rotation() {
+        let mut graph = examples::pid_controller();
+
+        // Set all rotations to non-zero to check if optimization changes them
+        for node in graph.nodes.values_mut() {
+            node.rotation = 2; // 180 degrees
+        }
+
+        auto_layout(&mut graph);
+
+        // After auto_layout, rotations should be optimized
+        // (may or may not change depending on the layout)
+        // Just verify no panic and graph is still valid
+        assert!(!graph.nodes.is_empty());
     }
 }

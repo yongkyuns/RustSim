@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use crate::{Annotation, Connection, NodeInstance, SimulationSettings};
 
 /// A simulation graph containing nodes, connections, and annotations
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SimulationGraph {
     /// All nodes in the graph, keyed by ID
     pub nodes: HashMap<String, NodeInstance>,
@@ -33,9 +33,8 @@ impl SimulationGraph {
     /// Remove a node and all its connections
     pub fn remove_node(&mut self, node_id: &str) {
         self.nodes.remove(node_id);
-        self.connections.retain(|c| {
-            c.source_node_id != node_id && c.target_node_id != node_id
-        });
+        self.connections
+            .retain(|c| c.source_node_id != node_id && c.target_node_id != node_id);
     }
 
     /// Add a connection
@@ -76,7 +75,7 @@ impl SimulationGraph {
 }
 
 /// Nested graph for subsystems
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SubsystemGraph {
     /// Nodes inside the subsystem
     pub nodes: Vec<NodeInstance>,

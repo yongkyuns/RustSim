@@ -1,6 +1,5 @@
 //! Test to verify interpreter and compiled modes produce matching results.
 
-use rustsim_app::examples;
 use rustsim_app::state::AppState;
 
 /// Compare interpreter and compiled mode for the PID controller example
@@ -18,14 +17,14 @@ fn test_pid_interpreter_vs_compiled() {
     let duration = 5.0;
     let steps = (duration / dt) as usize;
 
-    interpreter_state.settings.dt = dt;
-    interpreter_state.settings.duration = duration;
+    interpreter_state.settings_mut().dt = dt;
+    interpreter_state.settings_mut().duration = duration;
 
-    compiled_state.settings.dt = dt;
-    compiled_state.settings.duration = duration;
+    compiled_state.settings_mut().dt = dt;
+    compiled_state.settings_mut().duration = duration;
 
     // Run interpreter mode
-    interpreter_state.use_compiled_mode = false;
+    *interpreter_state.use_compiled_mode_mut() = false;
     interpreter_state.run_simulation();
     for _ in 0..steps {
         interpreter_state.step_simulation();
@@ -33,23 +32,23 @@ fn test_pid_interpreter_vs_compiled() {
     interpreter_state.stop_simulation();
 
     // Compile and run compiled mode
-    compiled_state.use_compiled_mode = true;
+    *compiled_state.use_compiled_mode_mut() = true;
     let compile_result = compiled_state.compile_simulation();
     assert!(compile_result.is_ok(), "Compilation failed: {:?}", compile_result.err());
 
     // Wait for compilation to complete (up to 120 seconds for CI environments)
     for _ in 0..600 {
         compiled_state.poll_compilation();
-        if matches!(compiled_state.compilation_status, rustsim_app::state::CompilationStatus::Ready) {
+        if matches!(compiled_state.compilation_status(), rustsim_app::state::CompilationStatus::Ready) {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(200));
     }
 
     assert!(
-        matches!(compiled_state.compilation_status, rustsim_app::state::CompilationStatus::Ready),
+        matches!(compiled_state.compilation_status(), rustsim_app::state::CompilationStatus::Ready),
         "Compilation did not complete: {:?}",
-        compiled_state.compilation_status
+        compiled_state.compilation_status()
     );
 
     compiled_state.run_simulation();
@@ -59,25 +58,25 @@ fn test_pid_interpreter_vs_compiled() {
     compiled_state.stop_simulation();
 
     // Compare results
-    println!("Interpreter data points: {}", interpreter_state.plot_data.len());
-    println!("Compiled data points: {}", compiled_state.plot_data.len());
+    println!("Interpreter data points: {}", interpreter_state.plot_data().len());
+    println!("Compiled data points: {}", compiled_state.plot_data().len());
 
     // Check that we have data
-    assert!(!interpreter_state.plot_data.is_empty(), "Interpreter produced no data");
-    assert!(!compiled_state.plot_data.is_empty(), "Compiled produced no data");
+    assert!(!interpreter_state.plot_data().is_empty(), "Interpreter produced no data");
+    assert!(!compiled_state.plot_data().is_empty(), "Compiled produced no data");
 
     // Compare number of signals
-    let interp_signals = interpreter_state.plot_data.first().map(|(_, v)| v.len()).unwrap_or(0);
-    let compiled_signals = compiled_state.plot_data.first().map(|(_, v)| v.len()).unwrap_or(0);
+    let interp_signals = interpreter_state.plot_data().first().map(|(_, v)| v.len()).unwrap_or(0);
+    let compiled_signals = compiled_state.plot_data().first().map(|(_, v)| v.len()).unwrap_or(0);
 
     println!("Interpreter signals: {}", interp_signals);
     println!("Compiled signals: {}", compiled_signals);
 
     // Print first few data points for comparison
     println!("\n=== First 10 data points comparison ===");
-    for i in 0..10.min(interpreter_state.plot_data.len()).min(compiled_state.plot_data.len()) {
-        let (t_i, vals_i) = &interpreter_state.plot_data[i];
-        let (t_c, vals_c) = &compiled_state.plot_data[i];
+    for i in 0..10.min(interpreter_state.plot_data().len()).min(compiled_state.plot_data().len()) {
+        let (t_i, vals_i) = &interpreter_state.plot_data()[i];
+        let (t_c, vals_c) = &compiled_state.plot_data()[i];
 
         println!("Step {}: t_interp={:.4}, t_compiled={:.4}", i, t_i, t_c);
         println!("  Interpreter: {:?}", vals_i);
@@ -86,10 +85,10 @@ fn test_pid_interpreter_vs_compiled() {
 
     // Print last few data points
     println!("\n=== Last 10 data points comparison ===");
-    let len = interpreter_state.plot_data.len().min(compiled_state.plot_data.len());
+    let len = interpreter_state.plot_data().len().min(compiled_state.plot_data().len());
     for i in (len.saturating_sub(10))..len {
-        let (t_i, vals_i) = &interpreter_state.plot_data[i];
-        let (t_c, vals_c) = &compiled_state.plot_data[i];
+        let (t_i, vals_i) = &interpreter_state.plot_data()[i];
+        let (t_c, vals_c) = &compiled_state.plot_data()[i];
 
         println!("Step {}: t_interp={:.4}, t_compiled={:.4}", i, t_i, t_c);
         println!("  Interpreter: {:?}", vals_i);
@@ -110,9 +109,9 @@ fn test_pid_interpreter_vs_compiled() {
     let mut max_diff_signal = 0;
 
     for (i, ((t_i, vals_i), (t_c, vals_c))) in interpreter_state
-        .plot_data
+        .plot_data()
         .iter()
-        .zip(compiled_state.plot_data.iter())
+        .zip(compiled_state.plot_data().iter())
         .enumerate()
     {
         // Check time matches
@@ -176,23 +175,23 @@ fn test_sinusoidal_interpreter_vs_compiled() {
     let dt = 0.01;
     let steps = 100;
 
-    interpreter_state.settings.dt = dt;
-    compiled_state.settings.dt = dt;
+    interpreter_state.settings_mut().dt = dt;
+    compiled_state.settings_mut().dt = dt;
 
     // Run interpreter
-    interpreter_state.use_compiled_mode = false;
+    *interpreter_state.use_compiled_mode_mut() = false;
     interpreter_state.run_simulation();
     for _ in 0..steps {
         interpreter_state.step_simulation();
     }
 
     // Compile and run
-    compiled_state.use_compiled_mode = true;
+    *compiled_state.use_compiled_mode_mut() = true;
     compiled_state.compile_simulation().unwrap();
 
     for _ in 0..600 {
         compiled_state.poll_compilation();
-        if matches!(compiled_state.compilation_status, rustsim_app::state::CompilationStatus::Ready) {
+        if matches!(compiled_state.compilation_status(), rustsim_app::state::CompilationStatus::Ready) {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(200));
@@ -204,12 +203,12 @@ fn test_sinusoidal_interpreter_vs_compiled() {
     }
 
     println!("\n=== Sinusoidal comparison ===");
-    println!("Interpreter points: {}", interpreter_state.plot_data.len());
-    println!("Compiled points: {}", compiled_state.plot_data.len());
+    println!("Interpreter points: {}", interpreter_state.plot_data().len());
+    println!("Compiled points: {}", compiled_state.plot_data().len());
 
-    for i in 0..5.min(interpreter_state.plot_data.len()) {
-        let (t_i, vals_i) = &interpreter_state.plot_data[i];
-        let (t_c, vals_c) = &compiled_state.plot_data[i];
+    for i in 0..5.min(interpreter_state.plot_data().len()) {
+        let (t_i, vals_i) = &interpreter_state.plot_data()[i];
+        let (t_c, vals_c) = &compiled_state.plot_data()[i];
         println!("Step {}: interp=({:.4}, {:?}), compiled=({:.4}, {:?})",
                  i, t_i, vals_i, t_c, vals_c);
     }
@@ -224,22 +223,22 @@ fn test_parameter_change_after_compilation() {
     let dt = 0.01;
     let steps = 10;
 
-    state.settings.dt = dt;
-    state.use_compiled_mode = true;
+    state.settings_mut().dt = dt;
+    *state.use_compiled_mode_mut() = true;
 
     // Compile the simulation
     state.compile_simulation().unwrap();
 
     for _ in 0..600 {
         state.poll_compilation();
-        if matches!(state.compilation_status, rustsim_app::state::CompilationStatus::Ready) {
+        if matches!(state.compilation_status(), rustsim_app::state::CompilationStatus::Ready) {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(200));
     }
 
     assert!(
-        matches!(state.compilation_status, rustsim_app::state::CompilationStatus::Ready),
+        matches!(state.compilation_status(), rustsim_app::state::CompilationStatus::Ready),
         "Compilation did not complete"
     );
 
@@ -250,18 +249,18 @@ fn test_parameter_change_after_compilation() {
     }
 
     // Get output at step 5 (should be sin(2*pi*1.0*0.05) * 1.0 = sin(0.314...) = ~0.309)
-    let (_, outputs_default) = &state.plot_data[5];
+    let (_, outputs_default) = &state.plot_data()[5];
     let output_default = outputs_default[0];
     println!("Default amplitude output at step 5: {:.6}", output_default);
 
     // Now change the amplitude to 2.0
     // Find the sinusoidal node and update its amplitude
-    let sin_node_id = state.graph.nodes.keys()
-        .find(|id| state.graph.nodes.get(*id).map(|n| n.block_type == "Sinusoidal").unwrap_or(false))
+    let sin_node_id = state.graph().nodes.keys()
+        .find(|id| state.graph().nodes.get(*id).map(|n| n.block_type == "Sinusoidal").unwrap_or(false))
         .cloned()
         .expect("Should find sinusoidal node");
 
-    if let Some(node) = state.graph.nodes.get_mut(&sin_node_id) {
+    if let Some(node) = state.graph_mut().nodes.get_mut(&sin_node_id) {
         node.params.insert("amplitude".to_string(), serde_json::json!(2.0));
     }
 
@@ -272,7 +271,7 @@ fn test_parameter_change_after_compilation() {
     }
 
     // Get output at step 5 (should be sin(2*pi*1.0*0.05) * 2.0 = ~0.618)
-    let (_, outputs_double) = &state.plot_data[5];
+    let (_, outputs_double) = &state.plot_data()[5];
     let output_double = outputs_double[0];
     println!("Double amplitude output at step 5: {:.6}", output_double);
 

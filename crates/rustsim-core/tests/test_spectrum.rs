@@ -3,8 +3,8 @@
 #![cfg(feature = "spectrum")]
 
 use approx::assert_abs_diff_eq;
-use rustsim::blocks::Spectrum;
 use rustsim::block::Block;
+use rustsim::blocks::Spectrum;
 use std::f64::consts::PI;
 
 /// Helper to run simulation for a given number of steps
@@ -46,7 +46,12 @@ fn test_dc_signal() {
 
     // Other frequencies should be near zero
     for i in 10..100 {
-        assert!(mag[0][i] < 0.1, "Frequency {} Hz has magnitude {}", freqs[i], mag[0][i]);
+        assert!(
+            mag[0][i] < 0.1,
+            "Frequency {} Hz has magnitude {}",
+            freqs[i],
+            mag[0][i]
+        );
     }
 }
 
@@ -84,8 +89,16 @@ fn test_single_frequency_detection() {
     assert_abs_diff_eq!(freqs[peak_idx], test_freq, epsilon = 2.0);
 
     // Peak magnitude should be close to amplitude
-    assert!(peak_mag > 0.9 * amplitude, "Peak magnitude {} too low", peak_mag);
-    assert!(peak_mag < 1.1 * amplitude, "Peak magnitude {} too high", peak_mag);
+    assert!(
+        peak_mag > 0.9 * amplitude,
+        "Peak magnitude {} too low",
+        peak_mag
+    );
+    assert!(
+        peak_mag < 1.1 * amplitude,
+        "Peak magnitude {} too high",
+        peak_mag
+    );
 }
 
 #[test]
@@ -102,9 +115,7 @@ fn test_multiple_frequencies() {
 
     simulate(
         &mut spectrum,
-        |t| {
-            [amp1 * (2.0 * PI * freq1 * t).sin() + amp2 * (2.0 * PI * freq2 * t).sin()]
-        },
+        |t| [amp1 * (2.0 * PI * freq1 * t).sin() + amp2 * (2.0 * PI * freq2 * t).sin()],
         3.0,
         dt,
     );
@@ -122,7 +133,11 @@ fn test_multiple_frequencies() {
     }
 
     // Should have at least 2 significant peaks
-    assert!(peaks.len() >= 2, "Expected at least 2 peaks, found {}", peaks.len());
+    assert!(
+        peaks.len() >= 2,
+        "Expected at least 2 peaks, found {}",
+        peaks.len()
+    );
 
     // Sort by magnitude
     peaks.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
@@ -150,10 +165,12 @@ fn test_multi_channel() {
 
     simulate(
         &mut spectrum,
-        |t| [
-            (2.0 * PI * freq_ch0 * t).sin(),
-            (2.0 * PI * freq_ch1 * t).sin(),
-        ],
+        |t| {
+            [
+                (2.0 * PI * freq_ch0 * t).sin(),
+                (2.0 * PI * freq_ch1 * t).sin(),
+            ]
+        },
         2.0,
         dt,
     );
@@ -212,7 +229,11 @@ fn test_exponential_forgetting() {
     }
 
     // Peak should still be detected with windowing
-    assert!(peak_mag > 0.3, "Peak magnitude {} too low with windowing", peak_mag);
+    assert!(
+        peak_mag > 0.3,
+        "Peak magnitude {} too low with windowing",
+        peak_mag
+    );
 
     // Continue with zero input - with forgetting, magnitude should be lower than without forgetting
     // Create a reference spectrum without forgetting for comparison
@@ -233,7 +254,10 @@ fn test_exponential_forgetting() {
     let mag_with_forget = spectrum.magnitude();
 
     // Both should detect the original signal, but windowing affects amplitude
-    assert!(mag_with_forget[0][peak_idx] >= 0.0, "Should have non-negative magnitude");
+    assert!(
+        mag_with_forget[0][peak_idx] >= 0.0,
+        "Should have non-negative magnitude"
+    );
 }
 
 #[test]
@@ -360,7 +384,10 @@ fn test_complex_spectrum_access() {
             break;
         }
     }
-    assert!(found_complex, "Complex spectrum should have non-zero values");
+    assert!(
+        found_complex,
+        "Complex spectrum should have non-zero values"
+    );
 }
 
 #[test]
@@ -397,12 +424,7 @@ fn test_reset() {
     let mut spectrum = Spectrum::<1, 1024>::new(sample_rate);
 
     // Run some simulation
-    simulate(
-        &mut spectrum,
-        |t| [(2.0 * PI * 10.0 * t).sin()],
-        2.0,
-        dt,
-    );
+    simulate(&mut spectrum, |t| [(2.0 * PI * 10.0 * t).sin()], 2.0, dt);
 
     let mag_before = spectrum.magnitude();
     let mut has_data = false;
@@ -432,24 +454,14 @@ fn test_buffer_revert() {
     let mut spectrum = Spectrum::<1, 1024>::new(sample_rate);
 
     // Run to some state
-    simulate(
-        &mut spectrum,
-        |t| [(2.0 * PI * 10.0 * t).sin()],
-        1.0,
-        dt,
-    );
+    simulate(&mut spectrum, |t| [(2.0 * PI * 10.0 * t).sin()], 1.0, dt);
 
     // Buffer the state
     spectrum.buffer();
     let mag_buffered = spectrum.magnitude();
 
     // Continue simulation
-    simulate(
-        &mut spectrum,
-        |t| [(2.0 * PI * 10.0 * t).sin()],
-        1.0,
-        dt,
-    );
+    simulate(&mut spectrum, |t| [(2.0 * PI * 10.0 * t).sin()], 1.0, dt);
 
     let mag_continued = spectrum.magnitude();
 
@@ -487,9 +499,11 @@ fn test_harmonic_detection() {
         &mut spectrum,
         |t| {
             let w = 2.0 * PI * fundamental;
-            [(w * t).sin()
-                + (1.0 / 3.0) * (3.0 * w * t).sin()
-                + (1.0 / 5.0) * (5.0 * w * t).sin()]
+            [
+                (w * t).sin()
+                    + (1.0 / 3.0) * (3.0 * w * t).sin()
+                    + (1.0 / 5.0) * (5.0 * w * t).sin(),
+            ]
         },
         3.0,
         dt,
@@ -514,7 +528,9 @@ fn test_harmonic_detection() {
     assert!(has_fundamental, "Should detect fundamental frequency");
 
     // Check for 3rd harmonic
-    let has_third = peaks.iter().any(|(f, _)| (*f - 3.0 * fundamental).abs() < 2.0);
+    let has_third = peaks
+        .iter()
+        .any(|(f, _)| (*f - 3.0 * fundamental).abs() < 2.0);
     assert!(has_third, "Should detect 3rd harmonic");
 }
 

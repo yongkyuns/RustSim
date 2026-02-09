@@ -22,10 +22,10 @@ fn test_tf_01_first_order_lowpass() {
 
     // Test at specific time points
     let test_points = [
-        (1.0, 1.0 - (-1.0_f64).exp()),  // t = 1 tau
-        (2.0, 1.0 - (-2.0_f64).exp()),  // t = 2 tau
-        (3.0, 1.0 - (-3.0_f64).exp()),  // t = 3 tau
-        (5.0, 1.0 - (-5.0_f64).exp()),  // t = 5 tau (99.3%)
+        (1.0, 1.0 - (-1.0_f64).exp()), // t = 1 tau
+        (2.0, 1.0 - (-2.0_f64).exp()), // t = 2 tau
+        (3.0, 1.0 - (-3.0_f64).exp()), // t = 3 tau
+        (5.0, 1.0 - (-5.0_f64).exp()), // t = 5 tau (99.3%)
     ];
 
     for (t_target, y_expected) in test_points {

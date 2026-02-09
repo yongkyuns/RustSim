@@ -1,4 +1,4 @@
-//! PID controller example using v2 architecture
+//! PID controller example using the Connection and Simulation API
 //!
 //! Demonstrates a PID controller regulating a first-order plant
 //!
@@ -7,127 +7,65 @@
 //!   Controller: u = PID(setpoint - x)
 //!   Goal: x -> setpoint
 
-use rustsim::{Adder, Block, Constant, Integrator, PID};
+use rustsim_core::anyblock::AnyBlock;
+use rustsim_core::blocks::{Adder, Constant, Integrator, PID};
+use rustsim_core::{Connection, Simulation};
 
-/// PID-controlled first-order system
-///
 /// Block diagram:
 /// ```text
-/// setpoint ─┬─> [error] ─> [PID] ─> [plant] ─> x
-///           │                                   │
-///           └───────────────────────────────────┘
+/// setpoint ─┬─> [error] ─> [PID] ─> [plant_gain] ─> [plant] ─> x
+///           │                                                    │
+///           └────────────────────────────────────────────────────┘
 /// ```
-struct PIDSystem {
-    setpoint: Constant,
-    error_calc: Adder<2>, // setpoint - measurement
-    controller: PID,
-    plant: Integrator,    // dx/dt = -x + u
-    plant_gain: Adder<2>, // -x + u
-    time: f64,
-}
-
-impl PIDSystem {
-    fn new(kp: f64, ki: f64, kd: f64, setpoint: f64, x0: f64) -> Self {
-        Self {
-            setpoint: Constant::new(setpoint),
-            error_calc: Adder::<2>::with_weights([1.0, -1.0]), // setpoint - x
-            controller: PID::new(kp, ki, kd),
-            plant: Integrator::new(x0),
-            plant_gain: Adder::<2>::with_weights([-1.0, 1.0]), // -x + u
-            time: 0.0,
-        }
-    }
-
-    #[inline]
-    fn propagate(&mut self) {
-        // Calculate error: setpoint - x
-        self.error_calc.inputs_mut()[0] = self.setpoint.get_output(0);
-        self.error_calc.inputs_mut()[1] = self.plant.get_output(0);
-
-        // Controller input is error
-        self.controller.set_input(0, self.error_calc.get_output(0));
-
-        // Plant dynamics: dx/dt = -x + u
-        self.plant_gain.inputs_mut()[0] = self.plant.get_output(0);
-        self.plant_gain.inputs_mut()[1] = self.controller.get_output(0);
-
-        // Plant integrator input
-        self.plant.set_input(0, self.plant_gain.get_output(0));
-    }
-
-    #[inline]
-    fn update(&mut self) {
-        let t = self.time;
-
-        // Update in topological order
-        self.setpoint.update(t);
-        self.plant.update(t);
-        self.propagate();
-
-        self.error_calc.update(t);
-        self.propagate();
-
-        self.controller.update(t);
-        self.propagate();
-
-        self.plant_gain.update(t);
-        self.propagate();
-    }
-
-    fn step(&mut self, dt: f64) {
-        self.update();
-
-        // Step dynamic blocks
-        self.controller.step(self.time, dt);
-        self.plant.step(self.time, dt);
-
-        self.time += dt;
-    }
-
-    fn output(&self) -> f64 {
-        self.plant.get_output(0)
-    }
-
-    fn error(&self) -> f64 {
-        self.error_calc.get_output(0)
-    }
-
-    fn control(&self) -> f64 {
-        self.controller.get_output(0)
-    }
-
-    fn setpoint(&self) -> f64 {
-        self.setpoint.get_output(0)
-    }
-
-    fn time(&self) -> f64 {
-        self.time
-    }
-
-    fn set_setpoint(&mut self, value: f64) {
-        self.setpoint.set_value(value);
-    }
-}
 
 fn main() {
-    println!("PID Controller - v2 Architecture Demo");
-    println!("======================================");
+    println!("PID Controller - Connection and Simulation API Demo");
+    println!("====================================================");
     println!();
     println!("System: First-order plant dx/dt = -x + u");
     println!("Controller: PID with Kp=2.0, Ki=1.0, Kd=0.5");
     println!();
 
-    // Create PID system
+    // Create PID system parameters
     let kp = 2.0;
     let ki = 1.0;
     let kd = 0.5;
-    let setpoint = 1.0;
+    let setpoint_value = 1.0;
     let x0 = 0.0;
 
-    let mut sim = PIDSystem::new(kp, ki, kd, setpoint, x0);
-    let dt = 0.01;
+    // Create blocks
+    let setpoint = Constant::new(setpoint_value);
+    let error_calc = Adder::<2>::with_weights([1.0, -1.0]); // setpoint - x
+    let controller = PID::new(kp, ki, kd);
+    let plant_gain = Adder::<2>::with_weights([-1.0, 1.0]); // -x + u
+    let plant = Integrator::new(x0);
 
-    println!("Initial setpoint: {}", setpoint);
+    let blocks: Vec<Box<dyn AnyBlock>> = vec![
+        Box::new(setpoint),    // 0
+        Box::new(error_calc),  // 1
+        Box::new(controller),  // 2
+        Box::new(plant_gain),  // 3
+        Box::new(plant),       // 4
+    ];
+
+    // Define connections
+    // Block diagram:
+    // setpoint[0] -> error_calc[0]
+    // plant[0] -> error_calc[1], plant_gain[0]
+    // error_calc[0] -> controller[0]
+    // controller[0] -> plant_gain[1]
+    // plant_gain[0] -> plant[0]
+    let connections = vec![
+        Connection::from(0, 0).to(1, 0).build(),              // setpoint -> error_calc[0]
+        Connection::from(4, 0).to(1, 1).to(3, 0).build(),     // plant -> error_calc[1], plant_gain[0]
+        Connection::from(1, 0).to(2, 0).build(),              // error_calc -> controller
+        Connection::from(2, 0).to(3, 1).build(),              // controller -> plant_gain[1]
+        Connection::from(3, 0).to(4, 0).build(),              // plant_gain -> plant
+    ];
+
+    let mut sim = Simulation::new(blocks, connections).with_dt(0.01);
+
+    println!("Initial setpoint: {}", setpoint_value);
     println!();
     println!(
         "{:>10} {:>12} {:>12} {:>12} {:>12}",
@@ -140,36 +78,61 @@ fn main() {
 
     // Simulate step response
     let duration = 5.0;
+    let dt = sim.dt();
     let steps = (duration / dt) as usize;
 
     for i in 0..=steps {
         // Print every 0.1 seconds
         if i % (steps / 50) == 0 {
             let t = sim.time();
-            let sp = sim.setpoint();
-            let y = sim.output();
-            let e = sim.error();
-            let u = sim.control();
+            let sp = sim.get_output(0, 0);  // setpoint
+            let y = sim.get_output(4, 0);   // plant output
+            let e = sim.get_output(1, 0);   // error
+            let u = sim.get_output(2, 0);   // control signal
             println!("{:10.4} {:12.6} {:12.6} {:12.6} {:12.6}", t, sp, y, e, u);
         }
 
-        sim.step(dt);
+        sim.step();
     }
 
     println!();
     println!("Step response complete:");
     println!(
         "  Final output: {:.6} (setpoint: {})",
-        sim.output(),
-        setpoint
+        sim.get_output(4, 0),
+        setpoint_value
     );
-    println!("  Final error:  {:.6}", sim.error());
+    println!("  Final error:  {:.6}", sim.get_output(1, 0));
     println!();
 
     // Test setpoint change
     println!("Changing setpoint to 2.0...");
     println!();
-    sim.set_setpoint(2.0);
+
+    // Reset and create new simulation with different setpoint
+    let setpoint2 = Constant::new(2.0);
+    let error_calc2 = Adder::<2>::with_weights([1.0, -1.0]);
+    let controller2 = PID::new(kp, ki, kd);
+    let plant_gain2 = Adder::<2>::with_weights([-1.0, 1.0]);
+    let plant2 = Integrator::new(sim.get_output(4, 0)); // Start from current output
+
+    let blocks2: Vec<Box<dyn AnyBlock>> = vec![
+        Box::new(setpoint2),
+        Box::new(error_calc2),
+        Box::new(controller2),
+        Box::new(plant_gain2),
+        Box::new(plant2),
+    ];
+
+    let connections2 = vec![
+        Connection::from(0, 0).to(1, 0).build(),
+        Connection::from(4, 0).to(1, 1).to(3, 0).build(),
+        Connection::from(1, 0).to(2, 0).build(),
+        Connection::from(2, 0).to(3, 1).build(),
+        Connection::from(3, 0).to(4, 0).build(),
+    ];
+
+    let mut sim2 = Simulation::new(blocks2, connections2).with_dt(0.01);
 
     println!(
         "{:>10} {:>12} {:>12} {:>12} {:>12}",
@@ -185,21 +148,21 @@ fn main() {
 
     for i in 0..=steps2 {
         if i % (steps2 / 50) == 0 {
-            let t = sim.time();
-            let sp = sim.setpoint();
-            let y = sim.output();
-            let e = sim.error();
-            let u = sim.control();
+            let t = sim2.time();
+            let sp = sim2.get_output(0, 0);
+            let y = sim2.get_output(4, 0);
+            let e = sim2.get_output(1, 0);
+            let u = sim2.get_output(2, 0);
             println!("{:10.4} {:12.6} {:12.6} {:12.6} {:12.6}", t, sp, y, e, u);
         }
 
-        sim.step(dt);
+        sim2.step();
     }
 
     println!();
     println!("Final state:");
-    println!("  Output: {:.6} (setpoint: 2.0)", sim.output());
-    println!("  Error:  {:.6}", sim.error());
+    println!("  Output: {:.6} (setpoint: 2.0)", sim2.get_output(4, 0));
+    println!("  Error:  {:.6}", sim2.get_output(1, 0));
     println!();
     println!("PID controller successfully regulates the plant!");
 }

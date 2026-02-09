@@ -28,7 +28,7 @@ pub mod port_colors {
 }
 
 /// A port instance on a node
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PortInstance {
     /// Unique identifier (format: "{node_id}-{direction}-{index}")
     pub id: String,

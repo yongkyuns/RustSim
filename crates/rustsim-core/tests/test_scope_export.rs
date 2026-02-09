@@ -355,7 +355,9 @@ fn test_save_multiple_times() {
     scope.update(0.01);
     scope.step(0.01, 0.01);
 
-    scope.save(filename).expect("Failed to save CSV second time");
+    scope
+        .save(filename)
+        .expect("Failed to save CSV second time");
 
     // Read second save (should have both data points)
     let contents2 = read_csv_file(filename);

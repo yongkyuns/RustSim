@@ -1,76 +1,41 @@
-//! Simple integration example using v2 architecture
+//! Simple integration example using Connection and Simulation API
 //!
 //! Demonstrates basic integrator usage: integrate constant input
 //!
 //! System: dy/dt = 1, y(0) = 0
 //! Solution: y(t) = t
 
-use rustsim::{Block, Constant, Integrator};
-
-/// Simple integrator test: integrate a constant
-struct SimpleIntegration {
-    source: Constant,
-    integrator: Integrator,
-    time: f64,
-}
-
-impl SimpleIntegration {
-    fn new() -> Self {
-        Self {
-            source: Constant::new(1.0),       // dy/dt = 1
-            integrator: Integrator::new(0.0), // y(0) = 0
-            time: 0.0,
-        }
-    }
-
-    #[inline]
-    fn propagate(&mut self) {
-        // Connect source -> integrator
-        self.integrator.set_input(0, self.source.get_output(0));
-    }
-
-    #[inline]
-    fn update(&mut self) {
-        let t = self.time;
-
-        // Update blocks in order
-        self.source.update(t);
-        self.propagate();
-
-        self.integrator.update(t);
-        self.propagate();
-    }
-
-    fn step(&mut self, dt: f64) {
-        // Update algebraic relationships
-        self.update();
-
-        // Step dynamic blocks
-        self.integrator.step(self.time, dt);
-
-        // Advance time
-        self.time += dt;
-    }
-
-    fn output(&self) -> f64 {
-        self.integrator.get_output(0)
-    }
-
-    fn time(&self) -> f64 {
-        self.time
-    }
-}
+use rustsim_core::anyblock::AnyBlock;
+use rustsim_core::blocks::{Constant, Integrator};
+use rustsim_core::{Connection, Simulation};
 
 fn main() {
-    println!("Simple Integration - v2 Architecture Demo");
-    println!("=========================================");
+    println!("Simple Integration - Connection & Simulation API Demo");
+    println!("=====================================================");
     println!();
     println!("System: dy/dt = 1, y(0) = 0");
     println!("Exact solution: y(t) = t");
     println!();
 
-    let mut sim = SimpleIntegration::new();
-    let dt = 0.01;
+    // 1. Create blocks with descriptive names
+    let constant = Constant::new(1.0);       // dy/dt = 1
+    let integrator = Integrator::new(0.0);   // y(0) = 0
+
+    // 2. Collect blocks (indices match connection references)
+    // Block 0: constant, Block 1: integrator
+    let blocks: Vec<Box<dyn AnyBlock>> = vec![
+        Box::new(constant),
+        Box::new(integrator),
+    ];
+
+    // 3. Define connections
+    let connections = vec![
+        Connection::from(0, 0).to(1, 0).build(),  // constant -> integrator
+    ];
+
+    // 4. Create simulation
+    let mut sim = Simulation::new(blocks, connections)
+        .with_dt(0.01);
 
     println!(
         "{:>10} {:>12} {:>12} {:>12}",
@@ -80,20 +45,21 @@ fn main() {
 
     // Simulate for 5 seconds
     let duration = 5.0;
+    let dt = sim.dt();
     let steps = (duration / dt) as usize;
 
     for i in 0..=steps {
         if i % (steps / 10) == 0 {
             let t = sim.time();
-            let y = sim.output();
+            let y = sim.get_output(1, 0);
             let exact = t;
             let error = (y - exact).abs();
             println!("{:10.4} {:12.6} {:12.6} {:12.2e}", t, y, exact, error);
         }
-        sim.step(dt);
+        sim.step();
     }
 
     println!();
-    println!("Final value: {:.6} (expected 5.0)", sim.output());
-    println!("Final error: {:.2e}", (sim.output() - 5.0).abs());
+    println!("Final value: {:.6} (expected 5.0)", sim.get_output(1, 0));
+    println!("Final error: {:.2e}", (sim.get_output(1, 0) - 5.0).abs());
 }

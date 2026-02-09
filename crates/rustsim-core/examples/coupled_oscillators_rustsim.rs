@@ -1,4 +1,4 @@
-//! Coupled Oscillator Benchmark - RustSim Implementation
+//! Coupled Oscillator Example - Connection and Simulation API
 //!
 //! Simulates N=20 coupled harmonic oscillators (chain of masses connected by springs).
 //!
@@ -14,27 +14,23 @@
 //!
 //! State variables: 40 total (20 positions + 20 velocities)
 
-use nalgebra::DVector;
-use rustsim::solvers::{ExplicitSolver, RK4, Solver};
+use rustsim_core::anyblock::AnyBlock;
+use rustsim_core::blocks::ODE;
+use rustsim_core::Simulation;
 use std::f64::consts::PI;
 use std::time::Instant;
 
 /// Coupled oscillator system parameters
-struct CoupledOscillators {
-    n: usize,      // Number of oscillators
-    m: f64,        // Mass
-    k: f64,        // Spring constant
-    c: f64,        // Damping coefficient
+struct CoupledOscillatorParams {
+    n: usize, // Number of oscillators
+    m: f64,   // Mass
+    k: f64,   // Spring constant
 }
 
-impl CoupledOscillators {
-    fn new(n: usize, m: f64, k: f64, c: f64) -> Self {
-        Self { n, m, k, c }
-    }
-
+impl CoupledOscillatorParams {
     /// Initialize state with sinusoidal displacement pattern
-    fn initial_state(&self) -> DVector<f64> {
-        let mut state = DVector::zeros(2 * self.n);
+    fn initial_state(&self) -> Vec<f64> {
+        let mut state = vec![0.0; 2 * self.n];
 
         // Set initial positions (first N elements)
         for i in 0..self.n {
@@ -42,87 +38,30 @@ impl CoupledOscillators {
         }
 
         // Velocities (second N elements) are zero
-        // Already initialized to zero
-
         state
     }
 
-    /// Compute derivatives: [dx/dt, dv/dt]
-    ///
-    /// State vector layout:
-    ///     state[0..N] = positions x_i
-    ///     state[N..2N] = velocities v_i
-    ///
-    /// Derivatives:
-    ///     dx_i/dt = v_i
-    ///     dv_i/dt = (1/m) * Force_i
-    ///
-    /// Force_i = -k*(x_i - x_{i-1}) - k*(x_i - x_{i+1}) - c*v_i
-    ///
-    /// With boundary conditions:
-    ///     x_{-1} = 0 (left boundary)
-    ///     x_N = 0 (right boundary)
-    fn derivatives(&self, state: &DVector<f64>, _t: f64) -> DVector<f64> {
-        let n = self.n;
-        let mut dstate = DVector::zeros(2 * n);
-
-        // Extract positions and velocities
-        let positions = state.rows(0, n);
-        let velocities = state.rows(n, n);
-
-        // Compute derivatives
-        for i in 0..n {
-            let x_i = positions[i];
-            let v_i = velocities[i];
-
-            // dx_i/dt = v_i
-            dstate[i] = v_i;
-
-            // Compute force on oscillator i
-            let mut force = 0.0;
-
-            // Left spring force: -k*(x_i - x_{i-1})
-            let x_left = if i == 0 { 0.0 } else { positions[i - 1] };
-            force -= self.k * (x_i - x_left);
-
-            // Right spring force: -k*(x_i - x_{i+1})
-            let x_right = if i == n - 1 { 0.0 } else { positions[i + 1] };
-            force -= self.k * (x_i - x_right);
-
-            // Damping force: -c*v_i
-            force -= self.c * v_i;
-
-            // dv_i/dt = force / m
-            dstate[n + i] = force / self.m;
-        }
-
-        dstate
-    }
-
     /// Compute total energy (kinetic + potential)
-    fn energy(&self, state: &DVector<f64>) -> f64 {
+    fn energy(&self, state: &[f64]) -> f64 {
         let n = self.n;
-        let positions = state.rows(0, n);
-        let velocities = state.rows(n, n);
 
         // Kinetic energy: (1/2) * m * sum(v_i^2)
         let mut kinetic = 0.0;
         for i in 0..n {
-            kinetic += 0.5 * self.m * velocities[i].powi(2);
+            kinetic += 0.5 * self.m * state[n + i].powi(2);
         }
 
         // Potential energy: (1/2) * k * sum((x_i - x_{i-1})^2 + (x_i - x_{i+1})^2)
-        // With boundary conditions x_{-1} = 0, x_N = 0
         let mut potential = 0.0;
         for i in 0..n {
-            let x_i = positions[i];
+            let x_i = state[i];
 
             // Left spring
-            let x_left = if i == 0 { 0.0 } else { positions[i - 1] };
+            let x_left = if i == 0 { 0.0 } else { state[i - 1] };
             potential += 0.5 * self.k * (x_i - x_left).powi(2);
 
             // Right spring
-            let x_right = if i == n - 1 { 0.0 } else { positions[i + 1] };
+            let x_right = if i == n - 1 { 0.0 } else { state[i + 1] };
             potential += 0.5 * self.k * (x_i - x_right).powi(2);
         }
 
@@ -130,9 +69,49 @@ impl CoupledOscillators {
     }
 }
 
+/// Create coupled oscillator dynamics function
+///
+/// Returns a closure that computes derivatives for the ODE block
+fn create_dynamics<const N: usize>(
+    n: usize,
+    m: f64,
+    k: f64,
+    c: f64,
+) -> impl Fn(f64, &[f64; N], &[f64], &mut [f64; N]) {
+    move |_t: f64, state: &[f64; N], _inputs: &[f64], derivs: &mut [f64; N]| {
+        // State layout: [positions..., velocities...]
+        // Derivatives: [velocities..., accelerations...]
+
+        for i in 0..n {
+            let x_i = state[i];
+            let v_i = state[n + i];
+
+            // dx_i/dt = v_i
+            derivs[i] = v_i;
+
+            // Compute force on oscillator i
+            let mut force = 0.0;
+
+            // Left spring force: -k*(x_i - x_{i-1})
+            let x_left = if i == 0 { 0.0 } else { state[i - 1] };
+            force -= k * (x_i - x_left);
+
+            // Right spring force: -k*(x_i - x_{i+1})
+            let x_right = if i == n - 1 { 0.0 } else { state[i + 1] };
+            force -= k * (x_i - x_right);
+
+            // Damping force: -c*v_i
+            force -= c * v_i;
+
+            // dv_i/dt = force / m
+            derivs[n + i] = force / m;
+        }
+    }
+}
+
 fn main() {
     println!("{}", "=".repeat(70));
-    println!("Coupled Oscillators Benchmark - RustSim");
+    println!("Coupled Oscillators - Connection and Simulation API");
     println!("{}", "=".repeat(70));
     println!();
 
@@ -159,37 +138,41 @@ fn main() {
     println!("  Time span: [{}, {}] seconds", t_start, t_end);
     println!("  Timestep: dt = {} seconds", dt);
     println!("  Total steps: {}", ((t_end - t_start) / dt) as usize);
-    println!("  Solver: RK4");
+    println!("  Solver: RK4 (via ODE block)");
     println!();
 
-    // Create system
+    // Create system parameters
     println!("Creating coupled oscillator system...");
-    let system = CoupledOscillators::new(n, m, k, c);
+    let params = CoupledOscillatorParams { n, m, k };
 
-    // Initialize solver
-    let initial_state = system.initial_state();
-    let mut solver = RK4::new(initial_state.clone());
-
-    // Compute initial energy
-    let initial_energy = system.energy(&initial_state);
+    // Get initial state
+    let initial_state = params.initial_state();
+    let initial_energy = params.energy(&initial_state);
     println!("  Initial energy: {:.6}", initial_energy);
     println!();
+
+    // Create ODE block with dynamic state size
+    // We need to use a fixed-size array for the ODE block, so we'll use a const generic
+    // For this example, we'll hardcode N=20 which gives us 40 states
+    const STATE_DIM: usize = 40;
+    let mut initial_array = [0.0; STATE_DIM];
+    initial_array.copy_from_slice(&initial_state);
+
+    let dynamics = create_dynamics::<STATE_DIM>(n, m, k, c);
+    let ode = ODE::new(initial_array, dynamics);
+
+    // Create the simulation with just the ODE block
+    let blocks: Vec<Box<dyn AnyBlock>> = vec![Box::new(ode)];
+    let connections = vec![]; // No connections needed for single block
+
+    let mut sim = Simulation::new(blocks, connections).with_dt(dt);
 
     // Run simulation
     println!("Running simulation...");
     let wall_start = Instant::now();
 
     let n_steps = ((t_end - t_start) / dt) as usize;
-
-    for _ in 0..n_steps {
-        // Buffer state before RK4 stages
-        solver.buffer(dt);
-
-        // Perform 4 RK4 stages
-        for _ in 0..4 {
-            solver.step(|state, time| system.derivatives(state, time), dt);
-        }
-    }
+    sim.run_steps(n_steps);
 
     let wall_elapsed = wall_start.elapsed();
     let wall_time = wall_elapsed.as_secs_f64();
@@ -198,8 +181,13 @@ fn main() {
     println!();
 
     // Compute final energy
-    let final_state = solver.state();
-    let final_energy = system.energy(final_state);
+    // Get state from ODE block outputs
+    let mut final_state = vec![0.0; STATE_DIM];
+    for i in 0..STATE_DIM {
+        final_state[i] = sim.get_output(0, i);
+    }
+
+    let final_energy = params.energy(&final_state);
     let energy_change = (final_energy - initial_energy).abs();
     let energy_relative_change = if initial_energy > 0.0 {
         energy_change / initial_energy

@@ -94,8 +94,7 @@ impl<const N: usize> ZerosPoleGain<N> {
     /// Create from real-valued poles only (convenience constructor)
     pub fn new_real(zeros: Vec<f64>, poles: [f64; N], gain: f64) -> Self {
         let zeros_complex: Vec<Complex64> = zeros.iter().map(|&z| Complex64::new(z, 0.0)).collect();
-        let poles_complex: [Complex64; N] =
-            poles.map(|p| Complex64::new(p, 0.0));
+        let poles_complex: [Complex64; N] = poles.map(|p| Complex64::new(p, 0.0));
 
         Self::new(zeros_complex, poles_complex, gain)
     }
@@ -106,9 +105,9 @@ impl<const N: usize> ZerosPoleGain<N> {
             if val.im.abs() > 1e-15 {
                 // This is complex, check if conjugate exists
                 let conj = val.conj();
-                let has_conjugate = values.iter().any(|v| {
-                    (v.re - conj.re).abs() < 1e-12 && (v.im - conj.im).abs() < 1e-12
-                });
+                let has_conjugate = values
+                    .iter()
+                    .any(|v| (v.re - conj.re).abs() < 1e-12 && (v.im - conj.im).abs() < 1e-12);
                 assert!(
                     has_conjugate,
                     "Complex {} must come in conjugate pairs: {} has no conjugate",
@@ -146,7 +145,10 @@ impl<const N: usize> ZerosPoleGain<N> {
 
         // Normalize denominator (make leading coefficient 1)
         let leading = den_coeffs[den_coeffs.len() - 1];
-        assert!(leading.norm() > 1e-15, "Leading denominator coefficient is zero");
+        assert!(
+            leading.norm() > 1e-15,
+            "Leading denominator coefficient is zero"
+        );
 
         let den_norm: Vec<f64> = den_coeffs.iter().map(|c| (c / leading).re).collect();
         let num_norm: Vec<f64> = num_coeffs.iter().map(|c| (c / leading).re).collect();
@@ -203,10 +205,7 @@ impl<const N: usize> ZerosPoleGain<N> {
         }
 
         // Start with (s - r₀) = -r₀ + s
-        let mut coeffs = vec![
-            -roots[0],
-            Complex64::new(1.0, 0.0),
-        ];
+        let mut coeffs = vec![-roots[0], Complex64::new(1.0, 0.0)];
 
         // Multiply by each remaining (s - rᵢ)
         for &root in &roots[1..] {
@@ -295,7 +294,14 @@ impl<const N: usize> ZerosPoleGain<N> {
     }
 
     /// Get the state-space matrices (for inspection/testing)
-    pub fn state_space_matrices(&self) -> (&[[f64; N]; N], &[[f64; 1]; N], &[[f64; N]; 1], &[[f64; 1]; 1]) {
+    pub fn state_space_matrices(
+        &self,
+    ) -> (
+        &[[f64; N]; N],
+        &[[f64; 1]; N],
+        &[[f64; N]; 1],
+        &[[f64; 1]; 1],
+    ) {
         (&self.a, &self.b, &self.c, &self.d)
     }
 }
@@ -368,7 +374,8 @@ impl<const N: usize> Block for ZerosPoleGain<N> {
 
         // y_new = y + dt/6 * (k1 + 2*k2 + 2*k3 + k4)
         for i in 0..N {
-            self.state[i] += dt / 6.0 * (self.k1[i] + 2.0 * self.k2[i] + 2.0 * self.k3[i] + self.k4[i]);
+            self.state[i] +=
+                dt / 6.0 * (self.k1[i] + 2.0 * self.k2[i] + 2.0 * self.k3[i] + self.k4[i]);
         }
 
         // Update output with new state
@@ -439,40 +446,34 @@ mod tests {
         let coeffs = ZerosPoleGain::<1>::expand_polynomial(&roots);
 
         assert_eq!(coeffs.len(), 2);
-        assert_relative_eq!(coeffs[0].re, -1.0, epsilon = 1e-10);  // constant term
-        assert_relative_eq!(coeffs[1].re, 1.0, epsilon = 1e-10);   // s term
+        assert_relative_eq!(coeffs[0].re, -1.0, epsilon = 1e-10); // constant term
+        assert_relative_eq!(coeffs[1].re, 1.0, epsilon = 1e-10); // s term
     }
 
     #[test]
     fn test_zpk_expand_polynomial_quadratic() {
         // (s - 1)(s - 2) = s² - 3s + 2
-        let roots = vec![
-            Complex64::new(1.0, 0.0),
-            Complex64::new(2.0, 0.0),
-        ];
+        let roots = vec![Complex64::new(1.0, 0.0), Complex64::new(2.0, 0.0)];
         let coeffs = ZerosPoleGain::<2>::expand_polynomial(&roots);
 
         assert_eq!(coeffs.len(), 3);
-        assert_relative_eq!(coeffs[0].re, 2.0, epsilon = 1e-10);   // constant
-        assert_relative_eq!(coeffs[1].re, -3.0, epsilon = 1e-10);  // s
-        assert_relative_eq!(coeffs[2].re, 1.0, epsilon = 1e-10);   // s²
+        assert_relative_eq!(coeffs[0].re, 2.0, epsilon = 1e-10); // constant
+        assert_relative_eq!(coeffs[1].re, -3.0, epsilon = 1e-10); // s
+        assert_relative_eq!(coeffs[2].re, 1.0, epsilon = 1e-10); // s²
     }
 
     #[test]
     fn test_zpk_expand_polynomial_complex_pair() {
         // (s - (1+i))(s - (1-i)) = s² - 2s + 2
-        let roots = vec![
-            Complex64::new(1.0, 1.0),
-            Complex64::new(1.0, -1.0),
-        ];
+        let roots = vec![Complex64::new(1.0, 1.0), Complex64::new(1.0, -1.0)];
         let coeffs = ZerosPoleGain::<2>::expand_polynomial(&roots);
 
         assert_eq!(coeffs.len(), 3);
-        assert_relative_eq!(coeffs[0].re, 2.0, epsilon = 1e-10);   // constant: (1+i)(1-i) = 2
+        assert_relative_eq!(coeffs[0].re, 2.0, epsilon = 1e-10); // constant: (1+i)(1-i) = 2
         assert_relative_eq!(coeffs[0].im, 0.0, epsilon = 1e-10);
-        assert_relative_eq!(coeffs[1].re, -2.0, epsilon = 1e-10);  // s: -(1+i + 1-i) = -2
+        assert_relative_eq!(coeffs[1].re, -2.0, epsilon = 1e-10); // s: -(1+i + 1-i) = -2
         assert_relative_eq!(coeffs[1].im, 0.0, epsilon = 1e-10);
-        assert_relative_eq!(coeffs[2].re, 1.0, epsilon = 1e-10);   // s²
+        assert_relative_eq!(coeffs[2].re, 1.0, epsilon = 1e-10); // s²
         assert_relative_eq!(coeffs[2].im, 0.0, epsilon = 1e-10);
     }
 
@@ -493,11 +494,7 @@ mod tests {
     #[should_panic(expected = "must come in conjugate pairs")]
     fn test_zpk_validates_complex_poles() {
         // Single complex pole without conjugate should panic
-        let _ = ZerosPoleGain::<1>::new(
-            vec![],
-            [Complex64::new(-1.0, 1.0)],
-            1.0,
-        );
+        let _ = ZerosPoleGain::<1>::new(vec![], [Complex64::new(-1.0, 1.0)], 1.0);
     }
 
     #[test]

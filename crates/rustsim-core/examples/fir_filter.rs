@@ -1,82 +1,116 @@
 ///! FIR Filter Example
 ///!
 ///! Demonstrates using the FIR filter block with different configurations:
-///! - Passthrough (single coefficient)
-///! - Gain
-///! - Moving average
-///! - Differentiator
-use rustsim::prelude::*;
+///! - Moving average (low-pass)
+///! - Differentiator (high-pass)
+///! - Custom coefficients
+///!
+///! Uses the new Connection and Simulation API for cleaner signal flow.
+
+use rustsim_core::prelude::*;
 
 fn main() {
     println!("=== FIR Filter Examples ===\n");
 
-    // Example 1: Passthrough filter
-    println!("1. Passthrough Filter [1.0]");
-    let mut passthrough = FIR::<1>::new([1.0], 1.0, 0.0);
-    passthrough.set_input(0, 5.0);
-    passthrough.step(0.0, 1.0);
-    println!("   Input: 5.0 -> Output: {}\n", passthrough.get_output(0));
+    // Example 1: Moving average filter (3-tap low-pass)
+    println!("1. Moving Average Filter [0.25, 0.5, 0.25]");
+    println!("   Sinusoidal input with high-frequency noise");
 
-    // Example 2: Gain filter
-    println!("2. Gain Filter [2.0]");
-    let mut gain = FIR::<1>::new([2.0], 1.0, 0.0);
-    gain.set_input(0, 3.0);
-    gain.step(0.0, 1.0);
-    println!("   Input: 3.0 -> Output: {}\n", gain.get_output(0));
+    let blocks: Vec<Box<dyn AnyBlock>> = vec![
+        Box::new(Sinusoidal::new(1.0, 10.0, 0.0)),    // Block 0: 10 Hz sine
+        Box::new(FIR::<3>::new([0.25, 0.5, 0.25], 1.0, 0.0)),  // Block 1: MA filter
+        Box::new(Scope::<2, 1000>::new()),             // Block 2: scope (input and output)
+    ];
 
-    // Example 3: Moving average filter
-    println!("3. Moving Average Filter [1/3, 1/3, 1/3]");
-    let mut ma = FIR::<3>::new([1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0], 1.0, 0.0);
+    let connections = vec![
+        Connection::from(0, 0).to(1, 0).to(2, 0).build(),  // Source -> filter, scope[0]
+        Connection::from(1, 0).to(2, 1).build(),           // Filter -> scope[1]
+    ];
 
-    let inputs = vec![3.0, 6.0, 9.0, 12.0, 15.0];
-    println!("   Inputs: {:?}", inputs);
-    print!("   Outputs: [");
+    let mut sim = Simulation::new(blocks, connections)
+        .with_dt(0.001);
 
-    for (i, &val) in inputs.iter().enumerate() {
-        ma.set_input(0, val);
-        ma.step(i as f64, 1.0);
-        print!("{:.2}", ma.get_output(0));
-        if i < inputs.len() - 1 {
-            print!(", ");
-        }
-    }
-    println!("]\n");
+    sim.run(0.1);  // Run for 100ms
 
-    // Example 4: Differentiator (approximates derivative)
-    println!("4. Differentiator [1.0, -1.0]");
-    let mut diff = FIR::<2>::new([1.0, -1.0], 1.0, 0.0);
+    println!("   Simulated 100ms with dt=1ms");
+    println!("   Input peak: ~1.0, Output smoothed\n");
 
-    let ramp = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
-    println!("   Inputs (ramp): {:?}", ramp);
-    print!("   Outputs (derivative): [");
+    // Example 2: Differentiator [1.0, -1.0]
+    println!("2. Differentiator FIR [1.0, -1.0]");
+    println!("   Ramp input -> constant output");
 
-    for (i, &val) in ramp.iter().enumerate() {
-        diff.set_input(0, val);
-        diff.step(i as f64, 1.0);
-        print!("{:.2}", diff.get_output(0));
-        if i < ramp.len() - 1 {
-            print!(", ");
-        }
-    }
-    println!("]\n");
+    let blocks: Vec<Box<dyn AnyBlock>> = vec![
+        Box::new(Ramp::new(1.0, 0.0)),                 // Block 0: ramp with slope=1
+        Box::new(FIR::<2>::new([1.0, -1.0], 1.0, 0.0)), // Block 1: differentiator
+        Box::new(Scope::<2, 100>::new()),              // Block 2: scope
+    ];
 
-    // Example 5: Two-tap FIR filter
-    println!("5. Two-tap FIR [1.0, 0.5]");
-    let mut two_tap = FIR::<2>::new([1.0, 0.5], 1.0, 0.0);
+    let connections = vec![
+        Connection::from(0, 0).to(1, 0).to(2, 0).build(),  // Ramp -> filter, scope[0]
+        Connection::from(1, 0).to(2, 1).build(),           // Filter -> scope[1]
+    ];
 
-    let step_inputs = vec![0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0];
-    println!("   Inputs (step): {:?}", step_inputs);
-    print!("   Outputs: [");
+    let mut sim = Simulation::new(blocks, connections)
+        .with_dt(0.01);
 
-    for (i, &val) in step_inputs.iter().enumerate() {
-        two_tap.set_input(0, val);
-        two_tap.step(i as f64, 1.0);
-        print!("{:.2}", two_tap.get_output(0));
-        if i < step_inputs.len() - 1 {
-            print!(", ");
-        }
-    }
-    println!("]\n");
+    sim.run(1.0);  // Run for 1 second
+
+    println!("   Ramp derivative ≈ 1.0 (slope)");
+    println!("   Final output: {:.3}\n", sim.get_output(1, 0));
+
+    // Example 3: Custom band-pass FIR
+    println!("3. Custom Band-Pass FIR");
+    println!("   Multi-frequency input");
+
+    // Create a composite signal: low freq + mid freq + high freq
+    let blocks: Vec<Box<dyn AnyBlock>> = vec![
+        Box::new(Sinusoidal::new(1.0, 5.0, 0.0)),      // Block 0: 5 Hz
+        Box::new(Sinusoidal::new(0.5, 20.0, 0.0)),     // Block 1: 20 Hz
+        Box::new(Sinusoidal::new(0.3, 50.0, 0.0)),     // Block 2: 50 Hz
+        Box::new(Adder::<3>::new()),                   // Block 3: sum signals
+        Box::new(FIR::<5>::new([0.1, 0.2, 0.4, 0.2, 0.1], 1.0, 0.0)), // Block 4: FIR
+        Box::new(Scope::<2, 2000>::new()),             // Block 5: scope
+    ];
+
+    let connections = vec![
+        Connection::from(0, 0).to(3, 0).build(),       // 5 Hz -> adder
+        Connection::from(1, 0).to(3, 1).build(),       // 20 Hz -> adder
+        Connection::from(2, 0).to(3, 2).build(),       // 50 Hz -> adder
+        Connection::from(3, 0).to(4, 0).to(5, 0).build(),  // Composite -> filter, scope[0]
+        Connection::from(4, 0).to(5, 1).build(),       // Filter -> scope[1]
+    ];
+
+    let mut sim = Simulation::new(blocks, connections)
+        .with_dt(0.0001);  // High sample rate for filters
+
+    sim.run(0.2);  // 200ms
+
+    println!("   Simulated composite signal through FIR");
+    println!("   Input contains 5Hz, 20Hz, 50Hz components");
+    println!("   Filter smooths high frequencies\n");
+
+    // Example 4: Step response of low-pass FIR
+    println!("4. Step Response - Low-Pass FIR");
+
+    let blocks: Vec<Box<dyn AnyBlock>> = vec![
+        Box::new(Step::new(1.0, 0.0)),                 // Block 0: unit step at t=0
+        Box::new(FIR::<3>::new([0.25, 0.5, 0.25], 1.0, 0.0)), // Block 1: MA filter
+        Box::new(Scope::<2, 200>::new()),              // Block 2: scope
+    ];
+
+    let connections = vec![
+        Connection::from(0, 0).to(1, 0).to(2, 0).build(),
+        Connection::from(1, 0).to(2, 1).build(),
+    ];
+
+    let mut sim = Simulation::new(blocks, connections)
+        .with_dt(0.01);
+
+    sim.run(2.0);
+
+    println!("   Step input at t=0");
+    println!("   Final filtered output: {:.3}", sim.get_output(1, 0));
+    println!("   (Should settle to 1.0)\n");
 
     println!("=== Example Complete ===");
 }

@@ -180,9 +180,7 @@ impl<const CHANNELS: usize, const BUFFER_SIZE: usize> Scope<CHANNELS, BUFFER_SIZ
     /// ```
     pub fn save(&self, filename: &str) -> io::Result<()> {
         // Generate default labels
-        let labels: Vec<String> = (0..CHANNELS)
-            .map(|i| format!("port {}", i))
-            .collect();
+        let labels: Vec<String> = (0..CHANNELS).map(|i| format!("port {}", i)).collect();
         let label_refs: Vec<&str> = labels.iter().map(|s| s.as_str()).collect();
 
         self.save_with_labels(filename, &label_refs)

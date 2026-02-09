@@ -1,7 +1,7 @@
 //! Plot panel UI component.
 
 use egui::{Color32, Ui};
-use egui_plot::{Line, LineStyle as EguiLineStyle, MarkerShape, Plot, PlotPoints, Points};
+use egui_plot::{Line, LineStyle as EguiLineStyle, MarkerShape, Plot, PlotPoints};
 
 use crate::plotting::{decimate_minmax, export_csv, PlotData};
 use crate::state::AppState;
@@ -16,7 +16,7 @@ pub fn render_plots(ui: &mut Ui, state: &mut AppState) {
         ui.separator();
 
         if ui.button("Clear").clicked() {
-            state.plot_data.clear();
+            state.clear_plot_data();
         }
 
         if ui.button("Export CSV").clicked() {
@@ -27,7 +27,7 @@ pub fn render_plots(ui: &mut Ui, state: &mut AppState) {
             state.editing_node = Some("plot_settings".to_string());
         }
 
-        ui.label(format!("{} points", state.plot_data.len()));
+        ui.label(format!("{} points", state.plot_data().len()));
     });
 
     ui.separator();
@@ -37,7 +37,7 @@ pub fn render_plots(ui: &mut Ui, state: &mut AppState) {
         render_plot_settings_dialog(ui, state);
     }
 
-    if state.plot_data.is_empty() {
+    if state.plot_data().is_empty() {
         ui.centered_and_justified(|ui| {
             ui.label("Run simulation to see results");
         });
@@ -46,7 +46,7 @@ pub fn render_plots(ui: &mut Ui, state: &mut AppState) {
 
     // Determine the number of signals from the first data point
     let num_signals = state
-        .plot_data
+        .plot_data()
         .first()
         .map(|(_, outputs)| outputs.len())
         .unwrap_or(0);
@@ -61,22 +61,22 @@ pub fn render_plots(ui: &mut Ui, state: &mut AppState) {
         .width(available.x)
         .height(available.y.max(50.0))
         .show_axes(true)
-        .x_axis_label(if state.plot_settings.x_axis_log {
+        .x_axis_label(if state.plot_settings().x_axis_log {
             "Time [s] (log)"
         } else {
             "Time [s]"
         })
-        .y_axis_label(if state.plot_settings.y_axis_log {
+        .y_axis_label(if state.plot_settings().y_axis_log {
             "Amplitude (log)"
         } else {
             "Amplitude"
         });
 
-    if state.plot_settings.show_grid {
+    if state.plot_settings().show_grid {
         plot = plot.show_grid(true);
     }
 
-    if state.plot_settings.show_legend {
+    if state.plot_settings().show_legend {
         plot = plot.legend(egui_plot::Legend::default());
     }
 
@@ -88,7 +88,7 @@ pub fn render_plots(ui: &mut Ui, state: &mut AppState) {
             // Get or create trace style
             let default_color = get_default_color(signal_idx);
             let style = state
-                .plot_settings
+                .plot_settings_mut()
                 .get_or_create_trace_style(&trace_key, Some(default_color))
                 .clone();
 
@@ -124,7 +124,7 @@ pub fn render_plots(ui: &mut Ui, state: &mut AppState) {
 
             // Get signal name from labels or use default
             let signal_name = state
-                .plot_labels
+                .plot_labels()
                 .get(signal_idx)
                 .cloned()
                 .unwrap_or_else(|| format!("Signal {}", signal_idx));
@@ -150,7 +150,7 @@ pub fn render_plots(ui: &mut Ui, state: &mut AppState) {
 
             // Apply marker style if not None
             if style.marker_style != MarkerStyle::None {
-                let marker_shape = match style.marker_style {
+                let _marker_shape = match style.marker_style {
                     MarkerStyle::Circle => MarkerShape::Circle,
                     MarkerStyle::Square => MarkerShape::Square,
                     MarkerStyle::Triangle => MarkerShape::Up,
@@ -166,15 +166,15 @@ pub fn render_plots(ui: &mut Ui, state: &mut AppState) {
 
 /// Prepare plot data with log scale transformation if needed
 fn prepare_plot_data(state: &AppState, _num_signals: usize) -> Vec<(f64, Vec<f64>)> {
-    if !state.plot_settings.x_axis_log && !state.plot_settings.y_axis_log {
-        return state.plot_data.clone();
+    if !state.plot_settings().x_axis_log && !state.plot_settings().y_axis_log {
+        return state.plot_data().to_vec();
     }
 
     state
-        .plot_data
+        .plot_data()
         .iter()
         .filter_map(|(t, outputs)| {
-            let x = if state.plot_settings.x_axis_log {
+            let x = if state.plot_settings().x_axis_log {
                 if *t > 0.0 {
                     t.log10()
                 } else {
@@ -184,7 +184,7 @@ fn prepare_plot_data(state: &AppState, _num_signals: usize) -> Vec<(f64, Vec<f64
                 *t
             };
 
-            let y_values: Vec<f64> = if state.plot_settings.y_axis_log {
+            let y_values: Vec<f64> = if state.plot_settings().y_axis_log {
                 outputs
                     .iter()
                     .map(|&y| {
@@ -216,22 +216,22 @@ fn render_plot_settings_dialog(ui: &mut Ui, state: &mut AppState) {
 
             ui.horizontal(|ui| {
                 ui.label("Show Legend:");
-                ui.checkbox(&mut state.plot_settings.show_legend, "");
+                ui.checkbox(&mut state.plot_settings_mut().show_legend, "");
             });
 
             ui.horizontal(|ui| {
                 ui.label("Show Grid:");
-                ui.checkbox(&mut state.plot_settings.show_grid, "");
+                ui.checkbox(&mut state.plot_settings_mut().show_grid, "");
             });
 
             ui.horizontal(|ui| {
                 ui.label("X-Axis Log Scale:");
-                ui.checkbox(&mut state.plot_settings.x_axis_log, "");
+                ui.checkbox(&mut state.plot_settings_mut().x_axis_log, "");
             });
 
             ui.horizontal(|ui| {
                 ui.label("Y-Axis Log Scale:");
-                ui.checkbox(&mut state.plot_settings.y_axis_log, "");
+                ui.checkbox(&mut state.plot_settings_mut().y_axis_log, "");
             });
 
             ui.separator();
@@ -240,7 +240,7 @@ fn render_plot_settings_dialog(ui: &mut Ui, state: &mut AppState) {
 
             // Determine the number of signals
             let num_signals = state
-                .plot_data
+                .plot_data()
                 .first()
                 .map(|(_, outputs)| outputs.len())
                 .unwrap_or(0);
@@ -254,18 +254,18 @@ fn render_plot_settings_dialog(ui: &mut Ui, state: &mut AppState) {
                         for signal_idx in 0..num_signals {
                             let trace_key = format!("signal-{}", signal_idx);
 
-                            // Get or create trace style
-                            let default_color = get_default_color(signal_idx);
-                            let style = state
-                                .plot_settings
-                                .get_or_create_trace_style(&trace_key, Some(default_color));
-
-                            // Get signal name
+                            // Get signal name first (immutable borrow)
                             let signal_name = state
-                                .plot_labels
+                                .plot_labels()
                                 .get(signal_idx)
                                 .cloned()
                                 .unwrap_or_else(|| format!("Signal {}", signal_idx));
+
+                            // Get or create trace style (mutable borrow after immutable borrow ends)
+                            let default_color = get_default_color(signal_idx);
+                            let style = state
+                                .plot_settings_mut()
+                                .get_or_create_trace_style(&trace_key, Some(default_color));
 
                             ui.group(|ui| {
                                 ui.horizontal(|ui| {
@@ -348,16 +348,16 @@ fn render_plot_settings_dialog(ui: &mut Ui, state: &mut AppState) {
 
 /// Export plot data to CSV
 fn export_plot_data(state: &AppState) {
-    if state.plot_data.is_empty() {
+    if state.plot_data().is_empty() {
         return;
     }
 
     // Extract time and signals
-    let time: Vec<f64> = state.plot_data.iter().map(|(t, _)| *t).collect();
+    let time: Vec<f64> = state.plot_data().iter().map(|(t, _)| *t).collect();
 
     // Determine number of signals
     let num_signals = state
-        .plot_data
+        .plot_data()
         .first()
         .map(|(_, outputs)| outputs.len())
         .unwrap_or(0);
@@ -370,13 +370,13 @@ fn export_plot_data(state: &AppState) {
         // Use custom label if available, otherwise default
         labels.push(
             state
-                .plot_labels
+                .plot_labels()
                 .get(i)
                 .cloned()
                 .unwrap_or_else(|| format!("Signal {}", i)),
         );
 
-        for (_, outputs) in &state.plot_data {
+        for (_, outputs) in state.plot_data() {
             if let Some(&value) = outputs.get(i) {
                 signals[i].push(value);
             }

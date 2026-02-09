@@ -2,6 +2,7 @@
 
 use eframe::egui;
 
+use crate::icons;
 use crate::state::AppState;
 use crate::ui::{
     render_block_palette, render_code_viewer, render_compilation_log, render_node_graph,
@@ -29,6 +30,12 @@ pub struct RustSimApp {
 
 impl RustSimApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        // Install image loaders for SVG support
+        egui_extras::install_image_loaders(&cc.egui_ctx);
+
+        // Register embedded SVG icons
+        icons::register_icons(&cc.egui_ctx);
+
         // Configure fonts and style
         Self::configure_style(&cc.egui_ctx);
 
@@ -64,7 +71,7 @@ impl RustSimApp {
             let mut open = true;
 
             // Get node info for the title
-            let title = if let Some(node) = self.state.graph.get_node(&node_id) {
+            let title = if let Some(node) = self.state.graph().get_node(&node_id) {
                 format!("{} - {}", node.name, node.block_type)
             } else {
                 "Edit Parameters".to_string()
@@ -77,13 +84,13 @@ impl RustSimApp {
                 .default_width(300.0)
                 .show(ctx, |ui| {
                     // Get block definition for parameter info
-                    let block_def = if let Some(node) = self.state.graph.get_node(&node_id) {
+                    let block_def = if let Some(node) = self.state.graph().get_node(&node_id) {
                         self.state.get_block_type(&node.block_type).cloned()
                     } else {
                         None
                     };
 
-                    if let Some(node) = self.state.graph.get_node_mut(&node_id) {
+                    if let Some(node) = self.state.graph_mut().get_node_mut(&node_id) {
                         // Node name
                         ui.horizontal(|ui| {
                             ui.label("Name:");
@@ -282,7 +289,7 @@ impl eframe::App for RustSimApp {
                 ui.separator();
 
                 // Zoom controls
-                ui.label(format!("Zoom: {:.0}%", self.state.zoom * 100.0));
+                ui.label(format!("Zoom: {:.0}%", self.state.zoom() * 100.0));
                 if ui.button("−").clicked() {
                     self.state.zoom_out();
                 }
@@ -295,7 +302,7 @@ impl eframe::App for RustSimApp {
 
                 ui.separator();
 
-                ui.checkbox(&mut self.state.show_canvas_grid, "Grid");
+                ui.checkbox(self.state.show_canvas_grid_mut(), "Grid");
             });
 
             ui.separator();
@@ -318,7 +325,7 @@ impl eframe::App for RustSimApp {
             self.state.step_simulation();
 
             // Stop when duration is reached
-            if self.state.sim_time >= self.state.settings.duration {
+            if self.state.sim_time() >= self.state.settings().duration {
                 self.state.stop_simulation();
             }
 
@@ -328,7 +335,7 @@ impl eframe::App for RustSimApp {
 
         // Request repaint when compilation is in progress
         #[cfg(not(target_arch = "wasm32"))]
-        if matches!(self.state.compilation_status, crate::state::CompilationStatus::Compiling) {
+        if matches!(self.state.compilation_status(), crate::state::CompilationStatus::Compiling) {
             ctx.request_repaint();
         }
     }

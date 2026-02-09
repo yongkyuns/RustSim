@@ -29,7 +29,7 @@ impl Default for Position {
 }
 
 /// A node instance in the simulation graph
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NodeInstance {
     /// Unique identifier for this node
     pub id: String,
@@ -90,7 +90,8 @@ impl NodeInstance {
     /// Add an input port
     pub fn add_input(&mut self, name: &str) {
         let index = self.inputs.len();
-        self.inputs.push(PortInstance::new_input(&self.id, index, name));
+        self.inputs
+            .push(PortInstance::new_input(&self.id, index, name));
     }
 
     /// Add an output port
@@ -130,7 +131,7 @@ impl NodeInstance {
 }
 
 /// An annotation (text label) on the canvas
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Annotation {
     /// Unique identifier
     pub id: String,

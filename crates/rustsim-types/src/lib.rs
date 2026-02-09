@@ -9,18 +9,24 @@
 mod block;
 mod connection;
 mod graph;
+mod model;
 mod node;
 mod port;
 mod settings;
 mod simstate;
+mod subsystem;
+mod view;
 
 pub use block::*;
 pub use connection::*;
 pub use graph::*;
+pub use model::*;
 pub use node::*;
 pub use port::*;
 pub use settings::*;
 pub use simstate::*;
+pub use subsystem::*;
+pub use view::*;
 
 /// Grid size for snapping positions (in pixels)
 pub const GRID_SIZE: f32 = 10.0;

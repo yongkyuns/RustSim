@@ -26,7 +26,7 @@ pub fn render_block_palette(ui: &mut Ui, state: &mut AppState) {
         .iter()
         .map(|&category| {
             let blocks: Vec<_> = state
-                .block_types
+                .block_types()
                 .iter()
                 .filter(|b| b.category == category)
                 .map(|b| (b.name.clone(), b.description.clone(), b.shape))
@@ -35,7 +35,7 @@ pub fn render_block_palette(ui: &mut Ui, state: &mut AppState) {
         })
         .collect();
 
-    let pan = state.pan;
+    let pan = *state.pan();
 
     egui::ScrollArea::vertical().show(ui, |ui| {
         for (category, blocks) in &blocks_by_category {

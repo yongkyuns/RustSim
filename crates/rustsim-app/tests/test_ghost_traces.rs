@@ -1,7 +1,6 @@
 //! Tests for ghost trace functionality
 
 use rustsim_app::state::{AppState, SimulationResult};
-use std::collections::VecDeque;
 
 #[test]
 fn test_result_history_max_size() {
@@ -13,19 +12,19 @@ fn test_result_history_max_size() {
             plot_data: vec![(i as f64, vec![i as f64])],
             plot_labels: vec![format!("Signal {}", i)],
         };
-        state.result_history.push_front(result);
+        state.result_history_mut().push_front(result);
 
         // Trim to max 6
-        while state.result_history.len() > 6 {
-            state.result_history.pop_back();
+        while state.result_history().len() > 6 {
+            state.result_history_mut().pop_back();
         }
     }
 
     // Should have max 6 results
-    assert_eq!(state.result_history.len(), 6);
+    assert_eq!(state.result_history().len(), 6);
 
     // Check that we have the most recent ones (4-9)
-    for (idx, result) in state.result_history.iter().enumerate() {
+    for (idx, result) in state.result_history().iter().enumerate() {
         let expected_value = 9 - idx;
         assert_eq!(result.plot_data[0].0, expected_value as f64);
     }
@@ -41,14 +40,14 @@ fn test_result_history_fifo() {
             plot_data: vec![(i as f64, vec![i as f64])],
             plot_labels: vec![format!("Signal {}", i)],
         };
-        state.result_history.push_front(result);
+        state.result_history_mut().push_front(result);
     }
 
-    assert_eq!(state.result_history.len(), 3);
+    assert_eq!(state.result_history().len(), 3);
 
     // Newest should be first (2), oldest should be last (0)
-    assert_eq!(state.result_history[0].plot_data[0].0, 2.0);
-    assert_eq!(state.result_history[2].plot_data[0].0, 0.0);
+    assert_eq!(state.result_history()[0].plot_data[0].0, 2.0);
+    assert_eq!(state.result_history()[2].plot_data[0].0, 0.0);
 }
 
 #[test]
@@ -61,15 +60,15 @@ fn test_clear_result_history() {
             plot_data: vec![(i as f64, vec![i as f64])],
             plot_labels: vec![format!("Signal {}", i)],
         };
-        state.result_history.push_front(result);
+        state.result_history_mut().push_front(result);
     }
 
-    assert_eq!(state.result_history.len(), 3);
+    assert_eq!(state.result_history().len(), 3);
 
     // Clear history
     state.clear_result_history();
 
-    assert_eq!(state.result_history.len(), 0);
+    assert_eq!(state.result_history().len(), 0);
 }
 
 #[test]
@@ -77,13 +76,13 @@ fn test_ghost_trace_count_bounds() {
     let state = AppState::new();
 
     // Ghost trace count should default to 0
-    assert_eq!(state.plot_settings.ghost_trace_count, 0);
+    assert_eq!(state.plot_settings().ghost_trace_count, 0);
 
     // Check that it can be set from 0 to 6
     let mut state = state;
     for i in 0..=6 {
-        state.plot_settings.ghost_trace_count = i;
-        assert_eq!(state.plot_settings.ghost_trace_count, i);
+        state.plot_settings_mut().ghost_trace_count = i;
+        assert_eq!(state.plot_settings().ghost_trace_count, i);
     }
 }
 

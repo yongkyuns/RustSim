@@ -1,8 +1,8 @@
 //! WASM platform implementation.
 
+use js_sys::{Function, Object, Reflect, Uint8Array};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
-use js_sys::{Function, Object, Reflect, Uint8Array};
 use web_sys::{Request, RequestInit, Response};
 
 use crate::{PluginError, PluginResult, SimulationPlugin};
@@ -94,11 +94,10 @@ impl WasmPlugin {
         .await
         .map_err(|e| PluginError::LoadingFailed(format!("{:?}", e)))?;
 
-        let instance: web_sys::WebAssembly::Instance =
-            Reflect::get(&result, &"instance".into())
-                .map_err(|e| PluginError::LoadingFailed(format!("{:?}", e)))?
-                .dyn_into()
-                .map_err(|e| PluginError::LoadingFailed(format!("{:?}", e)))?;
+        let instance: web_sys::WebAssembly::Instance = Reflect::get(&result, &"instance".into())
+            .map_err(|e| PluginError::LoadingFailed(format!("{:?}", e)))?
+            .dyn_into()
+            .map_err(|e| PluginError::LoadingFailed(format!("{:?}", e)))?;
 
         // Get counts
         let exports = instance.exports();

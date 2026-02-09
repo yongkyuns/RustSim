@@ -170,7 +170,10 @@ impl<const N: usize> TransferFunction<N> {
     ///   D = b_n  (if numerator degree equals denominator degree)
     pub fn new(num: &[f64], den: &[f64]) -> Self {
         assert!(!den.is_empty(), "Denominator cannot be empty");
-        assert!(den[0] != 0.0, "Leading coefficient of denominator cannot be zero");
+        assert!(
+            den[0] != 0.0,
+            "Leading coefficient of denominator cannot be zero"
+        );
         assert!(
             num.len() <= den.len(),
             "Improper transfer function (numerator degree > denominator degree) not supported. Got num.len()={}, den.len()={}",
@@ -191,11 +194,16 @@ impl<const N: usize> TransferFunction<N> {
         let order = den_norm.len() - 1; // System order is one less than coefficient count
 
         assert_eq!(
-            order, N,
+            order,
+            N,
             "Transfer function order {} does not match generic parameter N={}. \
              Denominator has {} coefficients (order = len-1 = {}). \
              Use TransferFunction::<{}>",
-            order, N, den_norm.len(), order, order
+            order,
+            N,
+            den_norm.len(),
+            order,
+            order
         );
 
         // Extract direct feedthrough (D matrix)
@@ -243,8 +251,8 @@ impl<const N: usize> TransferFunction<N> {
             for j in 0..N {
                 a[0][j] = -den_norm[j + 1]; // Skip leading 1.0, take coefficients in order
             }
-            for i in 0..N-1 {
-                a[i+1][i] = 1.0;
+            for i in 0..N - 1 {
+                a[i + 1][i] = 1.0;
             }
 
             // B matrix: [1, 0, 0, ..., 0]^T
@@ -412,7 +420,8 @@ impl<const N: usize> Block for TransferFunction<N> {
 
         // y_new = y + dt/6 * (k1 + 2*k2 + 2*k3 + k4)
         for i in 0..N {
-            self.state[i] += dt / 6.0 * (self.k1[i] + 2.0 * self.k2[i] + 2.0 * self.k3[i] + self.k4[i]);
+            self.state[i] +=
+                dt / 6.0 * (self.k1[i] + 2.0 * self.k2[i] + 2.0 * self.k3[i] + self.k4[i]);
         }
 
         // Update output with new state
@@ -460,10 +469,10 @@ mod tests {
         let tf = TransferFunction::<1>::new(&[1.0], &[1.0, 1.0]);
 
         // Check state-space matrices
-        assert_eq!(tf.a_matrix()[0][0], -1.0);  // A = [-1]
-        assert_eq!(tf.b_matrix()[0][0], 1.0);   // B = [1]
-        assert_eq!(tf.c_matrix()[0][0], 1.0);   // C = [1]
-        assert_eq!(tf.d_matrix()[0][0], 0.0);   // D = 0
+        assert_eq!(tf.a_matrix()[0][0], -1.0); // A = [-1]
+        assert_eq!(tf.b_matrix()[0][0], 1.0); // B = [1]
+        assert_eq!(tf.c_matrix()[0][0], 1.0); // C = [1]
+        assert_eq!(tf.d_matrix()[0][0], 0.0); // D = 0
         assert!(!tf.has_passthrough());
     }
 
@@ -523,7 +532,7 @@ mod tests {
         tf.update(0.0);
 
         let dt = 0.01;
-        let t_final = 5.0;  // 5 time constants
+        let t_final = 5.0; // 5 time constants
         let steps = (t_final / dt) as usize;
 
         for _ in 0..steps {

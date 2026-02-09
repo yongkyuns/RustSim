@@ -54,6 +54,8 @@ pub enum NodeShape {
     Diamond,
     /// Asymmetric corners (12px 4px 12px 4px)
     Mixed,
+    /// Right triangle pointing right (for amplifiers/gains)
+    Triangle,
 }
 
 impl Default for NodeShape {
@@ -240,6 +242,12 @@ impl BlockTypeDefinition {
     /// Set the port configuration
     pub fn with_ports(mut self, ports: PortConfig) -> Self {
         self.ports = ports;
+        self
+    }
+
+    /// Set the visual shape
+    pub fn with_shape(mut self, shape: NodeShape) -> Self {
+        self.shape = shape;
         self
     }
 }

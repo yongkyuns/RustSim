@@ -9,7 +9,7 @@
 //! Each system is solved with multiple solvers to compare performance and accuracy.
 
 use nalgebra::DVector;
-use rustsim::solvers::{ExplicitSolver, RK4, RKDP54, RKF45, Euler, RKCK54};
+use rustsim::solvers::{Euler, ExplicitSolver, RK4, RKCK54, RKDP54, RKF45};
 use std::time::Instant;
 
 // ============================================================================
@@ -189,33 +189,48 @@ fn benchmark_robertson() {
         match solver_name {
             "Euler" => {
                 let mut solver = Euler::new(initial.clone());
-                let (time, final_state) = run_solver(&mut solver, robertson_rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6e}, {:.6e}, {:.6e}]",
-                    solver_name, time, final_state[0], final_state[1], final_state[2]);
+                let (time, final_state) =
+                    run_solver(&mut solver, robertson_rhs, dt, t_final, stages);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6e}, {:.6e}, {:.6e}]",
+                    solver_name, time, final_state[0], final_state[1], final_state[2]
+                );
             }
             "RK4" => {
                 let mut solver = RK4::new(initial.clone());
-                let (time, final_state) = run_solver(&mut solver, robertson_rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6e}, {:.6e}, {:.6e}]",
-                    solver_name, time, final_state[0], final_state[1], final_state[2]);
+                let (time, final_state) =
+                    run_solver(&mut solver, robertson_rhs, dt, t_final, stages);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6e}, {:.6e}, {:.6e}]",
+                    solver_name, time, final_state[0], final_state[1], final_state[2]
+                );
             }
             "RKF45" => {
                 let mut solver = RKF45::new(initial.clone());
-                let (time, final_state) = run_solver(&mut solver, robertson_rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6e}, {:.6e}, {:.6e}]",
-                    solver_name, time, final_state[0], final_state[1], final_state[2]);
+                let (time, final_state) =
+                    run_solver(&mut solver, robertson_rhs, dt, t_final, stages);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6e}, {:.6e}, {:.6e}]",
+                    solver_name, time, final_state[0], final_state[1], final_state[2]
+                );
             }
             "RKCK54" => {
                 let mut solver = RKCK54::new(initial.clone());
-                let (time, final_state) = run_solver(&mut solver, robertson_rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6e}, {:.6e}, {:.6e}]",
-                    solver_name, time, final_state[0], final_state[1], final_state[2]);
+                let (time, final_state) =
+                    run_solver(&mut solver, robertson_rhs, dt, t_final, stages);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6e}, {:.6e}, {:.6e}]",
+                    solver_name, time, final_state[0], final_state[1], final_state[2]
+                );
             }
             "RKDP54" => {
                 let mut solver = RKDP54::new(initial.clone());
-                let (time, final_state) = run_solver(&mut solver, robertson_rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6e}, {:.6e}, {:.6e}]",
-                    solver_name, time, final_state[0], final_state[1], final_state[2]);
+                let (time, final_state) =
+                    run_solver(&mut solver, robertson_rhs, dt, t_final, stages);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6e}, {:.6e}, {:.6e}]",
+                    solver_name, time, final_state[0], final_state[1], final_state[2]
+                );
             }
             _ => {}
         }
@@ -258,32 +273,42 @@ fn benchmark_van_der_pol() {
             "Euler" => {
                 let mut solver = Euler::new(initial.clone());
                 let (time, final_state) = run_solver(&mut solver, rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}]",
-                    solver_name, time, final_state[0], final_state[1]);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}]",
+                    solver_name, time, final_state[0], final_state[1]
+                );
             }
             "RK4" => {
                 let mut solver = RK4::new(initial.clone());
                 let (time, final_state) = run_solver(&mut solver, rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}]",
-                    solver_name, time, final_state[0], final_state[1]);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}]",
+                    solver_name, time, final_state[0], final_state[1]
+                );
             }
             "RKF45" => {
                 let mut solver = RKF45::new(initial.clone());
                 let (time, final_state) = run_solver(&mut solver, rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}]",
-                    solver_name, time, final_state[0], final_state[1]);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}]",
+                    solver_name, time, final_state[0], final_state[1]
+                );
             }
             "RKCK54" => {
                 let mut solver = RKCK54::new(initial.clone());
                 let (time, final_state) = run_solver(&mut solver, rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}]",
-                    solver_name, time, final_state[0], final_state[1]);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}]",
+                    solver_name, time, final_state[0], final_state[1]
+                );
             }
             "RKDP54" => {
                 let mut solver = RKDP54::new(initial.clone());
                 let (time, final_state) = run_solver(&mut solver, rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}]",
-                    solver_name, time, final_state[0], final_state[1]);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}]",
+                    solver_name, time, final_state[0], final_state[1]
+                );
             }
             _ => {}
         }
@@ -331,38 +356,53 @@ fn benchmark_coupled_oscillators() {
         match solver_name {
             "Euler" => {
                 let mut solver = Euler::new(initial.clone());
-                let (time, final_state) = run_solver(&mut solver, coupled_oscillators_rhs, dt, t_final, stages);
+                let (time, final_state) =
+                    run_solver(&mut solver, coupled_oscillators_rhs, dt, t_final, stages);
                 let energy = calculate_oscillator_energy(&final_state);
-                println!("{:<12} Time: {:.4}s | Energy: {:.6} | x[0]={:.6}, x[10]={:.6}",
-                    solver_name, time, energy, final_state[0], final_state[10]);
+                println!(
+                    "{:<12} Time: {:.4}s | Energy: {:.6} | x[0]={:.6}, x[10]={:.6}",
+                    solver_name, time, energy, final_state[0], final_state[10]
+                );
             }
             "RK4" => {
                 let mut solver = RK4::new(initial.clone());
-                let (time, final_state) = run_solver(&mut solver, coupled_oscillators_rhs, dt, t_final, stages);
+                let (time, final_state) =
+                    run_solver(&mut solver, coupled_oscillators_rhs, dt, t_final, stages);
                 let energy = calculate_oscillator_energy(&final_state);
-                println!("{:<12} Time: {:.4}s | Energy: {:.6} | x[0]={:.6}, x[10]={:.6}",
-                    solver_name, time, energy, final_state[0], final_state[10]);
+                println!(
+                    "{:<12} Time: {:.4}s | Energy: {:.6} | x[0]={:.6}, x[10]={:.6}",
+                    solver_name, time, energy, final_state[0], final_state[10]
+                );
             }
             "RKF45" => {
                 let mut solver = RKF45::new(initial.clone());
-                let (time, final_state) = run_solver(&mut solver, coupled_oscillators_rhs, dt, t_final, stages);
+                let (time, final_state) =
+                    run_solver(&mut solver, coupled_oscillators_rhs, dt, t_final, stages);
                 let energy = calculate_oscillator_energy(&final_state);
-                println!("{:<12} Time: {:.4}s | Energy: {:.6} | x[0]={:.6}, x[10]={:.6}",
-                    solver_name, time, energy, final_state[0], final_state[10]);
+                println!(
+                    "{:<12} Time: {:.4}s | Energy: {:.6} | x[0]={:.6}, x[10]={:.6}",
+                    solver_name, time, energy, final_state[0], final_state[10]
+                );
             }
             "RKCK54" => {
                 let mut solver = RKCK54::new(initial.clone());
-                let (time, final_state) = run_solver(&mut solver, coupled_oscillators_rhs, dt, t_final, stages);
+                let (time, final_state) =
+                    run_solver(&mut solver, coupled_oscillators_rhs, dt, t_final, stages);
                 let energy = calculate_oscillator_energy(&final_state);
-                println!("{:<12} Time: {:.4}s | Energy: {:.6} | x[0]={:.6}, x[10]={:.6}",
-                    solver_name, time, energy, final_state[0], final_state[10]);
+                println!(
+                    "{:<12} Time: {:.4}s | Energy: {:.6} | x[0]={:.6}, x[10]={:.6}",
+                    solver_name, time, energy, final_state[0], final_state[10]
+                );
             }
             "RKDP54" => {
                 let mut solver = RKDP54::new(initial.clone());
-                let (time, final_state) = run_solver(&mut solver, coupled_oscillators_rhs, dt, t_final, stages);
+                let (time, final_state) =
+                    run_solver(&mut solver, coupled_oscillators_rhs, dt, t_final, stages);
                 let energy = calculate_oscillator_energy(&final_state);
-                println!("{:<12} Time: {:.4}s | Energy: {:.6} | x[0]={:.6}, x[10]={:.6}",
-                    solver_name, time, energy, final_state[0], final_state[10]);
+                println!(
+                    "{:<12} Time: {:.4}s | Energy: {:.6} | x[0]={:.6}, x[10]={:.6}",
+                    solver_name, time, energy, final_state[0], final_state[10]
+                );
             }
             _ => {}
         }
@@ -424,32 +464,42 @@ fn benchmark_lorenz() {
             "Euler" => {
                 let mut solver = Euler::new(initial.clone());
                 let (time, final_state) = run_solver(&mut solver, lorenz_rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}, {:.6}]",
-                    solver_name, time, final_state[0], final_state[1], final_state[2]);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}, {:.6}]",
+                    solver_name, time, final_state[0], final_state[1], final_state[2]
+                );
             }
             "RK4" => {
                 let mut solver = RK4::new(initial.clone());
                 let (time, final_state) = run_solver(&mut solver, lorenz_rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}, {:.6}]",
-                    solver_name, time, final_state[0], final_state[1], final_state[2]);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}, {:.6}]",
+                    solver_name, time, final_state[0], final_state[1], final_state[2]
+                );
             }
             "RKF45" => {
                 let mut solver = RKF45::new(initial.clone());
                 let (time, final_state) = run_solver(&mut solver, lorenz_rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}, {:.6}]",
-                    solver_name, time, final_state[0], final_state[1], final_state[2]);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}, {:.6}]",
+                    solver_name, time, final_state[0], final_state[1], final_state[2]
+                );
             }
             "RKCK54" => {
                 let mut solver = RKCK54::new(initial.clone());
                 let (time, final_state) = run_solver(&mut solver, lorenz_rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}, {:.6}]",
-                    solver_name, time, final_state[0], final_state[1], final_state[2]);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}, {:.6}]",
+                    solver_name, time, final_state[0], final_state[1], final_state[2]
+                );
             }
             "RKDP54" => {
                 let mut solver = RKDP54::new(initial.clone());
                 let (time, final_state) = run_solver(&mut solver, lorenz_rhs, dt, t_final, stages);
-                println!("{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}, {:.6}]",
-                    solver_name, time, final_state[0], final_state[1], final_state[2]);
+                println!(
+                    "{:<12} Time: {:.4}s | Final state: [{:.6}, {:.6}, {:.6}]",
+                    solver_name, time, final_state[0], final_state[1], final_state[2]
+                );
             }
             _ => {}
         }

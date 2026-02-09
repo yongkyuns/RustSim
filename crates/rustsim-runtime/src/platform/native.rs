@@ -60,8 +60,7 @@ impl NativePlugin {
     /// Load a pre-compiled library from a path
     pub fn load_from_path(path: &PathBuf, temp_dir: Option<TempDir>) -> PluginResult<Self> {
         unsafe {
-            let lib = Library::new(path)
-                .map_err(|e| PluginError::LoadingFailed(e.to_string()))?;
+            let lib = Library::new(path).map_err(|e| PluginError::LoadingFailed(e.to_string()))?;
 
             // Get function symbols
             // SAFETY: We keep _lib alive for the lifetime of the struct
@@ -90,17 +89,15 @@ impl NativePlugin {
                     .map_err(|e| PluginError::LoadingFailed(e.to_string()))?,
             );
 
-            let get_output_count_fn: Symbol<unsafe extern "C" fn() -> usize> =
-                std::mem::transmute(
-                    lib.get::<unsafe extern "C" fn() -> usize>(b"get_output_count")
-                        .map_err(|e| PluginError::LoadingFailed(e.to_string()))?,
-                );
+            let get_output_count_fn: Symbol<unsafe extern "C" fn() -> usize> = std::mem::transmute(
+                lib.get::<unsafe extern "C" fn() -> usize>(b"get_output_count")
+                    .map_err(|e| PluginError::LoadingFailed(e.to_string()))?,
+            );
 
-            let get_input_count_fn: Symbol<unsafe extern "C" fn() -> usize> =
-                std::mem::transmute(
-                    lib.get::<unsafe extern "C" fn() -> usize>(b"get_input_count")
-                        .map_err(|e| PluginError::LoadingFailed(e.to_string()))?,
-                );
+            let get_input_count_fn: Symbol<unsafe extern "C" fn() -> usize> = std::mem::transmute(
+                lib.get::<unsafe extern "C" fn() -> usize>(b"get_input_count")
+                    .map_err(|e| PluginError::LoadingFailed(e.to_string()))?,
+            );
 
             Ok(Self {
                 _lib: lib,

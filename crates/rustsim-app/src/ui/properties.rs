@@ -9,16 +9,16 @@ pub fn render_properties_panel(ui: &mut Ui, state: &mut AppState) {
     ui.heading("Properties");
     ui.separator();
 
-    if state.selected_nodes.is_empty() {
+    if state.selected_nodes().is_empty() {
         ui.label("Select a node to view properties");
         return;
     }
 
     // Show properties for first selected node
-    let node_id = state.selected_nodes.iter().next().cloned();
+    let node_id = state.selected_nodes().iter().next().cloned();
 
     if let Some(node_id) = node_id {
-        if let Some(node) = state.graph.get_node(&node_id) {
+        if let Some(node) = state.graph().get_node(&node_id) {
             ui.label(format!("Type: {}", node.block_type));
             ui.separator();
 

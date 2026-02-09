@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::Position;
 
 /// A connection between two nodes
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Connection {
     /// Unique identifier
     pub id: String,
@@ -58,7 +58,7 @@ impl Connection {
 }
 
 /// A waypoint in a connection path
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Waypoint {
     /// Unique identifier
     pub id: String,

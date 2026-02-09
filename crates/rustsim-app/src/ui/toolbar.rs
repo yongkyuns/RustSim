@@ -61,10 +61,7 @@ pub fn render_toolbar(ui: &mut Ui, state: &mut AppState, show_compilation_log: &
             }
 
             if ui.button("↺ Reset").on_hover_text("Reset to t=0").clicked() {
-                state.sim_time = 0.0;
-                state.plot_data.clear();
-                state.scope_data.clear();
-                state.spectrum_data.clear();
+                state.reset_to_zero();
             }
         });
 
@@ -74,9 +71,9 @@ pub fn render_toolbar(ui: &mut Ui, state: &mut AppState, show_compilation_log: &
         ui.horizontal(|ui| {
             if state.is_running() {
                 ui.spinner();
-                ui.label(format!("t = {:.3}s", state.sim_time));
+                ui.label(format!("t = {:.3}s", state.sim_time()));
             } else if state.get_step_count() > 0 {
-                ui.label(format!("t = {:.3}s", state.sim_time));
+                ui.label(format!("t = {:.3}s", state.sim_time()));
             } else {
                 ui.label("Ready");
             }
@@ -85,7 +82,10 @@ pub fn render_toolbar(ui: &mut Ui, state: &mut AppState, show_compilation_log: &
             if let Some(avg_time) = state.average_step_time() {
                 let steps = state.get_step_count();
                 let avg_us = avg_time.as_nanos() as f64 / 1000.0;
-                let mode = if state.use_compiled_mode { "compiled" } else { "interp" };
+                #[cfg(not(target_arch = "wasm32"))]
+                let mode = if state.use_compiled_mode() { "compiled" } else { "interp" };
+                #[cfg(target_arch = "wasm32")]
+                let mode = "interp";
 
                 if avg_us < 1000.0 {
                     ui.label(format!("| {} steps @ {:.1}µs/step ({})", steps, avg_us, mode))
@@ -109,7 +109,7 @@ pub fn render_toolbar(ui: &mut Ui, state: &mut AppState, show_compilation_log: &
                 state.auto_layout();
             }
 
-            ui.add_enabled_ui(!state.selected_nodes.is_empty(), |ui| {
+            ui.add_enabled_ui(!state.selected_nodes().is_empty(), |ui| {
                 if ui.button("🗑 Delete").clicked() {
                     state.delete_selected();
                 }
@@ -125,14 +125,14 @@ pub fn render_toolbar(ui: &mut Ui, state: &mut AppState, show_compilation_log: &
 
             // Solver selection
             egui::ComboBox::from_id_salt("solver")
-                .selected_text(state.settings.solver.as_str())
+                .selected_text(state.settings().solver.as_str())
                 .show_ui(ui, |ui| {
                     use rustsim_types::SolverType;
-                    ui.selectable_value(&mut state.settings.solver, SolverType::Euler, "Euler");
-                    ui.selectable_value(&mut state.settings.solver, SolverType::Heun, "Heun");
-                    ui.selectable_value(&mut state.settings.solver, SolverType::RK4, "RK4");
-                    ui.selectable_value(&mut state.settings.solver, SolverType::RKCK54, "RKCK54");
-                    ui.selectable_value(&mut state.settings.solver, SolverType::DOPRI54, "DOPRI54");
+                    ui.selectable_value(&mut state.settings_mut().solver, SolverType::Euler, "Euler");
+                    ui.selectable_value(&mut state.settings_mut().solver, SolverType::Heun, "Heun");
+                    ui.selectable_value(&mut state.settings_mut().solver, SolverType::RK4, "RK4");
+                    ui.selectable_value(&mut state.settings_mut().solver, SolverType::RKCK54, "RKCK54");
+                    ui.selectable_value(&mut state.settings_mut().solver, SolverType::DOPRI54, "DOPRI54");
                 });
 
             ui.label("Solver:");
@@ -145,7 +145,7 @@ pub fn render_toolbar(ui: &mut Ui, state: &mut AppState, show_compilation_log: &
                 use crate::state::CompilationStatus;
 
                 // Show compilation status indicator
-                match &state.compilation_status {
+                match state.compilation_status() {
                     CompilationStatus::NotCompiled => {}
                     CompilationStatus::Compiling => {
                         ui.spinner();
@@ -174,7 +174,7 @@ pub fn render_toolbar(ui: &mut Ui, state: &mut AppState, show_compilation_log: &
                 }
 
                 // Compile button (shown when compiled mode is enabled but not compiled)
-                if state.use_compiled_mode && matches!(state.compilation_status, CompilationStatus::NotCompiled | CompilationStatus::Error(_)) {
+                if state.use_compiled_mode() && matches!(state.compilation_status(), CompilationStatus::NotCompiled | CompilationStatus::Error(_)) {
                     if ui.button("Compile")
                         .on_hover_text("Compile simulation to native code")
                         .clicked()
@@ -187,12 +187,12 @@ pub fn render_toolbar(ui: &mut Ui, state: &mut AppState, show_compilation_log: &
                 }
 
                 // Compiled mode checkbox
-                let was_compiled = state.use_compiled_mode;
-                ui.checkbox(&mut state.use_compiled_mode, "Compiled Mode")
+                let was_compiled = state.use_compiled_mode();
+                ui.checkbox(state.use_compiled_mode_mut(), "Compiled Mode")
                     .on_hover_text("Use compiled native code instead of interpreter (faster)");
 
                 // If toggled on, trigger compilation
-                if state.use_compiled_mode && !was_compiled {
+                if state.use_compiled_mode() && !was_compiled {
                     if let Err(e) = state.compile_simulation() {
                         eprintln!("Auto-compilation failed: {}", e);
                     }
@@ -204,14 +204,14 @@ pub fn render_toolbar(ui: &mut Ui, state: &mut AppState, show_compilation_log: &
 
             // Duration and dt
             ui.add(
-                egui::DragValue::new(&mut state.settings.dt)
+                egui::DragValue::new(&mut state.settings_mut().dt)
                     .speed(0.001)
                     .range(1e-6..=1.0)
                     .prefix("dt: "),
             );
 
             ui.add(
-                egui::DragValue::new(&mut state.settings.duration)
+                egui::DragValue::new(&mut state.settings_mut().duration)
                     .speed(0.1)
                     .range(0.1..=1000.0)
                     .prefix("T: ")

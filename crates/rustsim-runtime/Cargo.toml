@@ -8,6 +8,7 @@ description = "Platform-abstracted simulation runtime for RustSim (native dylib 
 
 [dependencies]
 rustsim-types = { workspace = true }
+rustsim-core = { workspace = true }
 rustsim-codegen = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

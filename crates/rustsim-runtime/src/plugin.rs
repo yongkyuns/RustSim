@@ -34,7 +34,9 @@ pub trait SimulationPlugin: Send {
 
     /// Get all output values
     fn get_outputs(&self) -> Vec<f64> {
-        (0..self.output_count()).map(|i| self.get_output(i)).collect()
+        (0..self.output_count())
+            .map(|i| self.get_output(i))
+            .collect()
     }
 
     /// Set a specific input value

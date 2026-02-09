@@ -1251,10 +1251,6 @@ mod tests {
         }
 
         // Passband frequency should pass through
-        assert!(
-            max_output > 0.5,
-            "Passband gain too low: {}",
-            max_output
-        );
+        assert!(max_output > 0.5, "Passband gain too low: {}", max_output);
     }
 }
